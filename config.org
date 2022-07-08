@@ -1,0 +1,673 @@
+#+TITLE: Emacs Zero
+#+AUTHOR: Dhaval Patel
+#+STARTUP: overview
+
+* DEFINED VARIABLES
+
+** Files and Directory
+#+begin_src emacs-lisp
+(setq zero/digital-garden "~/Dev/OrgFiles/DigitalGarden"
+      zero/books-dir "~/Dev/Books"
+      zero/default-dir "~/Dev"
+      zero/org-dir "~/Dev/OrgFiles"
+      zero/org-agenda-dir "~/Dev/OrgFiles"
+      zero/org-journal-dir "~/Dev/OrgFiles/Journal"
+      zero/zero-logo "~/Dev/dots/zero/zero.png"
+      zero/org-html-css "<link rel=\"stylesheet\" type=\"text/css\" href=\"/home/dhaval/Dev/dots/emacs/assets/simple.min.css\" />"
+      zero/config-file "~/Dev/dots/zero/config.org")
+#+end_src
+** User Interface
+#+begin_src emacs-lisp
+(setq zero/fonts "Fira Code")
+#+end_src
+* BASIC SETUP
+** Setup Package.el To Work With MELPA
+#+begin_src emacs-lisp
+(require 'package)
+(add-to-list 'package-archives
+             '("melpa" . "https://melpa.org/packages/"))
+(package-initialize)
+(unless package-archive-contents
+  (package-refresh-contents))
+(add-to-list 'load-path "~/Dev/dots/zero/lisp/")
+#+end_src
+
+** Use-Package
+Install  use-package  and  enable  ':ensure  t'  globally.   The
+':ensure'  keyword  causes  the  package(s)  within  use-package
+statements to be installed  automatically if not already present
+on your  system.  To avoid  having to  add ':ensure t'  to every
+use-package     statement    in     this    config,     I    set
+'use-package-always-ensure'.
+
+#+begin_src emacs-lisp
+(unless (package-installed-p 'use-package)
+  (package-install 'use-package))
+(setq use-package-always-ensure t)
+#+end_src
+
+** General Keybindings
+General.el allows  us to  set keybindings.   As a  longtime Doom
+Emacs user, I  have grown accustomed to using SPC  as the prefix
+key.General makes setting keybindings (especially with SPC) much
+easier.   All of  the keybindings  we  set later  in the  config
+depend on general being loaded.
+
+#+begin_src emacs-lisp
+(use-package general
+  :config
+  (general-evil-setup t))
+#+end_src
+
+** Theme
+We need  a nice colorscheme.   The Doom  Emacs guys have  a nice
+collection of themes, so let's install them!
+
+#+begin_src emacs-lisp
+(use-package kaolin-themes
+  :config
+  (load-theme 'kaolin-valley-dark t)
+  (kaolin-treemacs-theme))
+#+end_src
+
+** Tweaks
+By default in  Emacs, we don't have ability to  select text, and
+then  start typing  and  our new  text  replaces the  selection.
+Let's fix that!
+
+#+begin_src emacs-lisp
+(delete-selection-mode t)
+#+end_src
+
+** Font Face
+#+begin_src emacs-lisp
+(set-face-attribute 'default nil
+  ;;:font "EB Garamond"
+  :font "Fira Code"
+  :height 115
+  :weight 'medium)
+(set-face-attribute 'variable-pitch nil
+  :font "Fira Code"
+  :height 115
+  :weight 'medium)
+(set-face-attribute 'fixed-pitch nil
+  :font "Fira Code"
+  :height 115
+  :weight 'medium)
+;; Makes commented text and keywords italics.
+;; This is working in emacsclient but not emacs.
+;; Your font must have an italic face available.
+(set-face-attribute 'font-lock-comment-face nil
+  :slant 'italic)
+(set-face-attribute 'font-lock-keyword-face nil
+  :slant 'italic)
+
+;; Uncomment the following line if line spacing needs adjusting.
+(setq-default line-spacing 0.04)
+
+;; Needed if using emacsclient. Otherwise, your fonts will be smaller than expected.
+(add-to-list 'default-frame-alist '(font . "Fira Code"))
+;; changes certain keywords to symbols, such as lamda!
+(setq global-prettify-symbols-mode t)
+#+end_src
+
+** Zooming In and Out
+You can use the bindings CTRL  plus =/- for zooming in/out.  You
+can also use CTRL plus the mouse wheel for zooming in/out.
+
+#+begin_src emacs-lisp
+;; zoom in/out like we do everywhere else.
+(global-set-key (kbd "C-+") 'text-scale-increase)
+(global-set-key (kbd "C--") 'text-scale-decrease)
+(global-set-key (kbd "<C-wheel-up>") 'text-scale-increase)
+(global-set-key (kbd "<C-wheel-down>") 'text-scale-decrease)
+#+end_src
+* RELEASED MAP
+#+begin_src emacs-lisp
+(global-unset-key (kbd "C-z"))
+#+end_src
+* QUICK ACCESS
+#+begin_src emacs-lisp
+(defun open-configuration-file ()
+  (interactive)
+  (switch-to-buffer (find-file-noselect zero/config-file nil nil t)))
+(global-set-key (kbd "C-z C-f C-c") 'open-configuration-file)
+(general-define-key
+ :prefix "C-z C-f"
+ "c" '(open-configuration-file :which-key "Configuration File"))
+#+end_src
+* EVALUATE ELISP EXPRESSIONS
+#+begin_src emacs-lisp
+(general-define-key
+ :prefix "C-z C-e"
+ "r" '(eval-region :which-key "Evaluate Region")
+ "l" '(eval-last-sexp :which-key "Evaluate Last Expression")
+ "d" '(eval-defun :which-key "Evaluate Function")
+ "b" '(eval-buffer :which-key "Evaluate Buffer"))
+#+end_src
+* TEXT UTILITY
+#+begin_src emacs-lisp
+(defun zero/my-join-n-lines (n)
+  (dotimes (_ (1- n))
+    (delete-indentation t))
+  (forward-line))
+
+(defun zero/my-join-lines-loop ()
+  (interactive "*")
+  (while (= 0 (my-join-n-lines 4))))
+#+end_src
+* BUFFERS AND BOOKMARKS
+
+#+begin_src emacs-lisp
+(general-define-key
+ :prefix "C-z C-b"
+ "b" '(counsel-switch-buffer :which-key "Switch Buffers")
+ "r" '(counsel-buffer-or-recentf :which-key "Recents")
+ "c" '(clone-indirect-buffer-other-window :which-key "Clone")
+ "n" '(next-buffer :which-key "Next Buffer")
+ "p" '(previous-buffer :which-key "Previous Buffer")
+ "k" '(delete-window :which-key "Delete Window")
+ "d" '(kill-current-buffer :which-key "Kill Buffer"))
+#+end_src
+
+* TODO FILE MANAGER (DIRED)
+Dired  is  the  file  manager  within  Emacs.   Below,  I  setup
+keybindings for  image previews  (peep-dired).  I've  chosen the
+format of 'SPC d' plus 'key'.
+
+** Keybindings To Open Dired
+| COMMAND    | DESCRIPTION                        | KEYBINDING |
+|------------+------------------------------------+------------|
+| dired      | /Open dired file manager/            | SPC d d    |
+| dired-jump | /Jump to current directory in dired/ | SPC d j    |
+
+** Keybindings Within Dired
+| COMMAND            | DESCRIPTION                                 | KEYBINDING |
+|--------------------+---------------------------------------------+------------|
+| dired-view-file    | /View file in dired/                          | SPC d v    |
+| dired-up-directory | /Go up in directory tree/                     | h          |
+| dired-find-file    | /Go down in directory tree (or open if file)/ | l          |
+
+** Keybindings For Peep-Dired-Mode
+| COMMAND              | DESCRIPTION                              | KEYBINDING |
+|----------------------+------------------------------------------+------------|
+| peep-dired           | /Toggle previews within dired/             | SPC d p    |
+| peep-dired-next-file | /Move to next file in peep-dired-mode/     | j          |
+| peep-dired-prev-file | /Move to previous file in peep-dired-mode/ | k          |
+
+#+begin_src emacs-lisp
+(use-package all-the-icons-dired)
+(use-package dired-open)
+(use-package peep-dired)
+
+;; (nvmap :states '(normal visual) :keymaps 'override :prefix "SPC"
+;;                "d d" '(dired :which-key "Open dired")
+;;                "d j" '(dired-jump :which-key "Dired jump to current")
+;;                "d p" '(peep-dired :which-key "Peep-dired"))
+
+;;(with-eval-after-load 'dired
+  ;;(define-key dired-mode-map (kbd "M-p") 'peep-dired)
+  ;;(evil-define-key 'normal dired-mode-map (kbd "h") 'dired-up-directory)
+  ;;(evil-define-key 'normal dired-mode-map (kbd "l") 'dired-open-file) ; use dired-find-file instead if not using dired-open package
+  ;;(evil-define-key 'normal peep-dired-mode-map (kbd "j") 'peep-dired-next-file)
+  ;;(evil-define-key 'normal peep-dired-mode-map (kbd "k") 'peep-dired-prev-file))
+
+(add-hook 'peep-dired-hook 'evil-normalize-keymaps)
+;; Get file icons in dired
+(add-hook 'dired-mode-hook 'all-the-icons-dired-mode)
+;; With dired-open plugin, you can launch external programs for certain extensions
+;; For example, I set all .png files to open in 'sxiv' and all .mp4 files to open in 'mpv'
+(setq dired-open-extensions '(("gif" . "sxiv")
+                              ("jpg" . "sxiv")
+                              ("png" . "sxiv")
+                              ("mkv" . "mpv")
+                              ("mp4" . "mpv")))
+#+end_src
+
+* TODO FILES
+** File-related Keybindings
+
+#+begin_src emacs-lisp
+;; (nvmap :states '(normal visual) :keymaps 'override :prefix "SPC"
+;;        "."     '(counsel-dired :which-key "Find file")
+;;        "f r"   '(counsel-recentf :which-key "Recent files")
+;;        "f s"   '(save-buffer :which-key "Save file")
+;;        "f u"   '(sudo-edit-find-file :which-key "Sudo find file")
+;;        "f y"   '(dt/show-and-copy-buffer-path :which-key "Yank file path")
+;;        "f C"   '(copy-file :which-key "Copy file")
+;;        "f D"   '(delete-file :which-key "Delete file")
+;;        "f R"   '(rename-file :which-key "Rename file")
+;;        "f S"   '(write-file :which-key "Save file as...")
+;;        "f U"   '(sudo-edit :which-key "Sudo edit file"))
+#+end_src
+
+** Useful File Functions
+#+begin_src emacs-lisp
+(defun zero/show-and-copy-buffer-path ()
+  "Show and copy the full path to the current file in the minibuffer."
+  (interactive)
+  ;; list-buffers-directory is the variable set in dired buffers
+  (let ((file-name (or (buffer-file-name) list-buffers-directory)))
+    (if file-name
+        (message (kill-new file-name))
+      (error "Buffer not visiting a file"))))
+(defun zero/show-buffer-path-name ()
+  "Show the full path to the current file in the minibuffer."
+  (interactive)
+  (let ((file-name (buffer-file-name)))
+    (if file-name
+        (progn
+          (message file-name)
+          (kill-new file-name))
+      (error "Buffer not visiting a file"))))
+#+end_src
+
+* TODO GENERAL KEYBINDINGS
+General.el allows us to set keybindings. As a longtime Vim user,
+I have  grown accustomed  to using  SPC as  the prefix  key.  It
+certainly is easier on the  hands than constantly using CTRL for
+a prefix.
+
+#+begin_src emacs-lisp
+;; (nvmap :keymaps 'override :prefix "SPC"
+;;        "SPC"   '(counsel-M-x :which-key "M-x")
+;;        "y"     '(clipboard-yank :which-key "Paste from Clipboard")	
+;;        "c"     '(comment-line :which-key "Comment Line")	
+;;        "h r r" '((lambda () (interactive) (load-file "~/Dev/dots/emacs/init.el")) :which-key "Reload emacs config")
+;;        "t t"   '(toggle-truncate-lines :which-key "Toggle truncate lines"))
+;; (nvmap :keymaps 'override :prefix "SPC"
+;;        "s b"   '(counsel-switch-buffer :which-key "Switch Buffer")
+;;        "s g"   '(counsel-git :which-key "Git Files")	
+;;        "s f"   '(counsel-fzf :which-key "Fzf"))
+#+end_src
+
+* TODO MAGIT
+A git  client for Emacs.   Often cited  as a killer  feature for
+Emacs.
+
+#+begin_src emacs-lisp
+(use-package magit)
+;; (nvmap :keymaps 'override :prefix "SPC"
+;;        "g s"   '(magit-status :which-key "Magit Status")
+;;        "g c"   '(magit-commit-create :which-key "Magit Commit")
+;;        "g q"   '(with-editor-finish :which-key "Commit Successfully")
+;;        "g p"   '(magit-push :which-key "Magit Push")
+;;        )
+ #+end_src
+  
+* TODO COMPANY Mode
+#+begin_src emacs-lisp
+(use-package company)
+#+end_src
+* ORG MODE
+Org Mode is  =THE= killer feature within Emacs.  But  it does need
+some tweaking.
+
+** Keybindings
+#+begin_src emacs-lisp
+(general-define-key
+ :prefix "C-z C-o"
+  "*" '(org-ctrl-c-star :which-key "")
+  "+" '(org-ctrl-c-minus :which-key "")
+  "." '(counsel-org-goto :which-key "")
+  "e" '(org-export-dispatch :which-key "")
+  "c" '(org-capture :which-key "")
+  "f" '(org-footnote-new :which-key "")
+  "h" '(org-toggle-heading :which-key "")
+  "i" '(org-toggle-item :which-key "")
+  "n" '(org-store-link :which-key "")
+  "o" '(org-open-at-point :which-key "")
+  "t" '(org-todo :which-key "")
+  "x" '(org-toggle-checkbox :which-key "")
+  "B" '(org-babel-tangle :which-key "")
+  "I" '(org-toggle-inline-images :which-key "")
+  "T" '(org-todo-list :which-key "")
+  "s" '(org-schedule :which-key "")
+  "a" '(org-agenda-list :which-key ""))
+#+end_src
+
+** Defining A Few Things
+#+begin_src emacs-lisp
+(add-hook 'org-mode-hook 'org-indent-mode)
+(setq org-directory zero/org-dir
+      org-agenda-files '(zero-agenda-dir)
+      org-default-notes-file (expand-file-name "notes.org" org-directory)
+      org-ellipsis " ... "
+      org-log-done 'time
+      org-refile-targets '(("/home/dhaval/Dev/Write/archives/daily.org" :maxlevel . 1)
+                           ("/home/dhaval/Dev/Write/archives/tasks.org" :maxlevel . 1))
+      org-journal-dir zero/org-journal-dir
+      org-journal-date-format "%B %d, %Y (%A) "
+      org-journal-file-format "%Y-%m-%d.org"
+      org-hide-emphasis-markers t)
+(setq org-src-preserve-indentation nil
+      org-src-tab-acts-natively t
+      org-edit-src-content-indentation 0)
+#+end_src
+
+** Enabling Org Bullets
+Org-bullets gives us attractive bullets rather than asterisks.
+
+#+begin_src emacs-lisp
+(use-package org-bullets)
+(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+#+end_src
+
+** Org Link Abbreviations
+This allows for the use of abbreviations that will get expanded out into a lengthy URL.
+   
+#+begin_src emacs-lisp
+;; An example of how this works.
+;; [[arch-wiki:Name_of_Page][Description]]
+(setq org-link-abbrev-alist    ; This overwrites the default Doom org-link-abbrev-list
+        '(("google" . "http://www.google.com/search?q=")
+          ("arch-wiki" . "https://wiki.archlinux.org/index.php/")
+          ("ddg" . "https://duckduckgo.com/?q=")
+          ("wiki" . "https://en.wikipedia.org/wiki/")))
+#+end_src
+
+#+begin_src emacs-lisp
+#+end_src
+
+** Org Todo Keywords
+This lets us create the various TODO tags that we can use in Org.
+   
+#+begin_src emacs-lisp
+(setq org-todo-keywords        
+        '((sequence
+           "TODO(t)"           
+           "REVIEW(r)"
+	       "IDEA(i)"
+	       "ZETTLE(z)"
+	       "ORGANIZE(o)"
+           "|"                 
+           "DONE(d)"
+           "CANCELLED(c)" )))  
+#+end_src
+
+** Source Code Block Tag Expansion
+Org-tempo is a package that allows for '<s' followed by TAB to expand to a begin_src tag.  Other expansions available include:
+
+| Type + TAB | Expands to ...                          |
+|------------+-----------------------------------------|
+| <a         | '#+BEGIN_EXPORT ascii' … '#+END_EXPORT  |
+| <c         | '#+BEGIN_CENTER' … '#+END_CENTER'       |
+| <C         | '#+BEGIN_COMMENT' … '#+END_COMMENT'     |
+| <e         | '#+BEGIN_EXAMPLE' … '#+END_EXAMPLE'     |
+| <E         | '#+BEGIN_EXPORT' … '#+END_EXPORT'       |
+| <h         | '#+BEGIN_EXPORT html' … '#+END_EXPORT'  |
+| <l         | '#+BEGIN_EXPORT latex' … '#+END_EXPORT' |
+| <q         | '#+BEGIN_QUOTE' … '#+END_QUOTE'         |
+| <s         | '#+BEGIN_SRC' … '#+END_SRC'             |
+| <v         | '#+BEGIN_VERSE' … '#+END_VERSE'         |
+
+#+begin_src emacs-lisp
+(use-package org-tempo
+  :ensure nil) ;; tell use-package not to try to install org-tempo since it's already there.
+#+end_src
+
+** Source Code Block Syntax Highlighting
+We want the same syntax highlighting in source blocks as in the native language files.
+
+#+begin_src emacs-lisp
+(setq org-src-fontify-natively t
+    org-src-tab-acts-natively t
+    org-confirm-babel-evaluate nil
+    org-edit-src-content-indentation 0)
+#+end_src
+
+** Automatically Create Table of Contents
+Toc-org helps you to have an up-to-date table of contents in org files without exporting (useful useful for README files on GitHub).
+Use :TOC: to create the table.
+
+#+begin_src emacs-lisp
+  (use-package toc-org
+    :commands toc-org-enable
+    :init (add-hook 'org-mode-hook 'toc-org-enable))
+#+end_src
+
+** Make M-RET Not Add Blank Lines
+#+begin_src emacs-lisp
+(setq org-blank-before-new-entry (quote ((heading . nil)
+                                         (plain-list-item . nil))))
+#+end_src
+
+** Org Export To Manpage Format
+#+begin_src emacs-lisp
+(use-package ox-man
+  :ensure nil)
+(setq org-export-html-style-include-scripts nil
+       org-export-html-style-include-default nil)
+(setq org-export-html-style zero/org-html-css)
+#+end_src
+
+* ORG Roam
+#+begin_src emacs-lisp
+(use-package org-roam
+      :ensure t
+      :custom
+      (org-roam-directory zero/digital-garden)
+      (setq org-roam-completion-everywhere t)
+      (setq org-roam-v2-ack t)
+      :config
+      (org-roam-setup)
+      ;; If using org-roam-protocol
+      (require 'org-roam-protocol))
+
+(general-define-key
+ :prefix "C-z C-r"
+  "b" '(org-roam-buffer-toggle :which-key "")
+  "t" '(org-roam-tag-add :which-key "")
+  "f" '(org-roam-node-find :which-key "")
+  "g" '(org-roam-node-visit :which-key "")
+  "u" '(org-roam-ui-mode :which-key "")
+  "i" '(org-roam-node-insert :which-key "")
+  "h" '(org-id-get-create :which-key "")
+  "c" '(org-roam-capture :which-key "")
+  "j" '(org-roam-dailies-capture-today :which-key ""))
+
+(use-package websocket)
+(use-package org-roam-ui
+       :ensure t
+       :config
+       (setq org-roam-ui-sync-theme t
+             org-roam-ui-follow t
+             org-roam-ui-update-on-save t
+             org-roam-ui-open-on-start nil))
+(setq org-roam-v2-ack t)
+#+end_src
+
+** Fix for space
+#+begin_src emacs-lisp
+(define-key minibuffer-local-completion-map (kbd "SPC") 'self-insert-command)
+#+end_src
+
+* TODO SPLITS AND WINDOW CONTROLS
+
+#+begin_src emacs-lisp
+;; (winner-mode 1)
+;; (nvmap :prefix "SPC"
+;;        ;; Window splits
+;;        "w c"   '(evil-window-delete :which-key "Close window")
+;;        "w n"   '(evil-window-new :which-key "New window")
+;;        "w s"   '(evil-window-split :which-key "Horizontal split window")
+;;        "w v"   '(evil-window-vsplit :which-key "Vertical split window")
+;;        ;; Window motions
+;;        "w h"   '(evil-window-left :which-key "Window left")
+;;        "w j"   '(evil-window-down :which-key "Window down")
+;;        "w k"   '(evil-window-up :which-key "Window up")
+;;        "w l"   '(evil-window-right :which-key "Window right")
+;;        "w w"   '(evil-window-next :which-key "Goto next window")
+;;        ;; winner mode
+;;        "w <left>"  '(winner-undo :which-key "Winner undo")
+;;        "w <right>" '(winner-redo :which-key "Winner redo"))
+#+end_src
+
+* Counsel - Ivy
+Narrowing Framework
+#+begin_src emacs-lisp
+(use-package counsel :ensure t)
+(ivy-mode)
+;;(use-package helm-lsp :ensure t)
+#+end_src
+* WRITING
+A  minor  mode  for  Emacs that  implements  a  distraction-free
+writing mode similar to the famous Writeroom editor for OS X.
+
+** WriteRoom Mode
+
+#+begin_src emacs-lisp
+(setq default-directory zero/default-dir)
+(setq-default fill-column 64)
+(require 'smart-quotes)
+;;(add-to-list 'ispell-hunspell-dict-paths-alist '("en_US" "/home/dhaval/Dev/dots/emacs/dicts/en_US.aff"))
+(use-package writeroom-mode
+  :config
+  (setq writeroom-width 76))
+(add-hook 'writeroom-mode-on-hook (lambda()
+				    (setq buffer-face-mode-face '(:family "Source Code Pro" :height 130))
+				    (buffer-face-mode)
+				    ))
+(add-hook 'writeroom-mode-off-hook (lambda() (buffer-face-mode -1)))
+(add-hook 'writeroom-mode-on-hook (lambda() (display-line-numbers-mode -1)))
+(add-hook 'writeroom-mode-off-hook (lambda() (display-line-numbers-mode 1)))
+(use-package ox-epub
+  :after org)
+
+(use-package powerthesaurus)
+
+(defun justify-paragraph ()
+  (interactive)
+  (fill-paragraph 64))
+
+(defun writeroom-dive-in ()
+  (interactive)
+  (writeroom-mode 1)
+  (smart-quotes-mode 1)
+  (auto-fill-mode 1))
+
+(defun writeroom-dive-out ()
+  (interactive)
+  (writeroom-mode -1)
+  (smart-quotes-mode -1)
+  (auto-fill-mode -1))
+
+(general-define-key
+ :prefix "C-z C-w"
+  "i"  '(writeroom-dive-in :which-key "")
+  "o"  '(writeroom-dive-out :which-key "")
+  "w"  '(writeroom-mode :which-key "")
+  "s"  '(smart-quotes-mode :which-key "")
+  "f"  '(auto-fill-mode :which-key "")
+  "j"  '(justify-paragraph :which-key "")
+  "m"  '(flyspell-correct-word-before-point :which-key "")
+  "c"  '(count-words :which-key "")
+  "u"  '(join-line :which-key ""))
+#+end_src
+#+end_src
+
+* MISC
+
+** Dashboard
+
+#+begin_src emacs-lisp
+(use-package dashboard
+  :init      ;; tweak dashboard config before loading it
+  (setq dashboard-set-heading-icons t)
+  (setq dashboard-set-file-icons t)
+  (setq dashboard-banner-logo-title "Let's Get Back To What's Important")
+  (setq dashboard-startup-banner zero/zero-logo)  ;; use custom image as banner
+  (setq dashboard-center-content t) ;; set to 't' for centered content
+  (setq dashboard-items '((recents . 16)))
+  :config
+  (dashboard-setup-startup-hook)
+  (dashboard-modify-heading-icons '((recents . "file-text")
+			      (bookmarks . "book"))))
+
+;; Open Dashboard for Emacs Client instead of scratch buffer
+(setq initial-buffer-choice (lambda () (get-buffer "*dashboard*")))
+
+(setq recentf-exclude '("/home/dhaval/Dev/dots/zero/*" "*.git/*"))
+#+end_src
+
+** Icons
+This is  an icon  set that  can be  used with  dashboard, dired,
+ibuffer and other Emacs programs.
+  
+#+begin_src emacs-lisp
+(use-package all-the-icons)
+#+end_src
+
+** GUI Tweasks
+#+begin_src emacs-lisp
+(menu-bar-mode -1)
+(tool-bar-mode -1)
+(scroll-bar-mode -1)
+(global-display-line-numbers-mode 1)
+(setq frame-resize-pixelwise t)
+(auto-fill-mode t)
+(use-package doom-modeline
+  :config
+  (setq doom-modeline-height 22)
+  (setq doom-modeline-icon t)
+  )
+(doom-modeline-mode 1)
+#+end_src
+
+** Which Key
+Which-key  is a  minor  mode  for Emacs  that  displays the  key
+bindings following your currently  entered incomplete command (a
+prefix) in a popup.
+
+=NOTE:= Which-key has an annoying bug  that in some fonts and font
+sizes,  the bottom  row  in which  key gets  covered  up by  the
+modeline.
+
+#+begin_src emacs-lisp
+(use-package which-key
+  :init
+  (setq which-key-side-window-location 'bottom
+        which-key-sort-order #'which-key-key-order-alpha
+        which-key-sort-uppercase-first nil
+        which-key-add-column-padding 1
+        which-key-max-display-columns nil
+        which-key-min-display-lines 6
+        which-key-side-window-slot -10
+        which-key-side-window-max-height 0.25
+        which-key-idle-delay 0.8
+        which-key-max-description-length 25
+        which-key-allow-imprecise-window-fit t
+        which-key-separator " → " ))
+(which-key-mode)
+#+end_src
+
+** Scrolling
+Emacs'  default  scrolling is  annoying  because  of the  sudden
+half-page jumps.  Also, I wanted to adjust the scrolling speed.
+
+#+begin_src emacs-lisp
+(setq scroll-conservatively 101) ;; value greater than 100 gets rid of half page jumping
+(setq mouse-wheel-scroll-amount '(3 ((shift) . 3))) ;; how many lines at a time
+(setq mouse-wheel-progressive-speed t) ;; accelerate scrolling
+(setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
+#+end_src
+
+** Clean Up
+#+begin_src emacs-lisp
+(setq backup-directory-alist
+          `(("." . ,(concat user-emacs-directory "backups"))))
+#+end_src
+
+* Emacs Experiments
+#+begin_src emacs-lisp
+(use-package nov)
+#+end_src
+* MEOW
+The configuration is in [[file:///~/.emacs.d/meow.el][Meow.el]]
+#+begin_src emacs-lisp
+(use-package meow)
+(load 
+ (expand-file-name
+  "meow.el"
+  user-emacs-directory))
+#+end_src
