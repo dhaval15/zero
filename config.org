@@ -3,17 +3,18 @@
 #+STARTUP: overview
 
 * DEFINED VARIABLES
-
 ** Files and Directory
 #+begin_src emacs-lisp
 (setq zero/digital-garden "~/Dev/OrgFiles/DigitalGarden"
       zero/books-dir "~/Dev/Books"
       zero/default-dir "~/Dev"
       zero/org-dir "~/Dev/OrgFiles"
-      zero/org-agenda-dir "~/Dev/OrgFiles"
-      zero/org-journal-dir "~/Dev/OrgFiles/Journal"
+      zero/org-agenda-dir "~/Dev/OrgFiles/"
+      zero/org-journal-dir "~/Dev/OrgFiles/DigitalGarden/Journal"
       zero/zero-logo "~/Dev/dots/zero/zero.png"
-      zero/org-html-css "<link rel=\"stylesheet\" type=\"text/css\" href=\"/home/dhaval/Dev/dots/emacs/assets/simple.min.css\" />"
+      zero/org-html-css "<link rel=\"stylesheet\" type=\"text/css\" href=\"/home/dhaval/Dev/OrgFiles/public/css/simple.min.css\" />"
+      zero/org-publish-dir "~/Dev/OrgFiles/Publish"
+      zero/html-publish-dir "~/Dev/OrgFiles/public"
       zero/config-file "~/Dev/dots/zero/config.org")
 #+end_src
 ** User Interface
@@ -45,20 +46,6 @@ use-package     statement    in     this    config,     I    set
   (package-install 'use-package))
 (setq use-package-always-ensure t)
 #+end_src
-
-** General Keybindings
-General.el allows  us to  set keybindings.   As a  longtime Doom
-Emacs user, I  have grown accustomed to using SPC  as the prefix
-key.General makes setting keybindings (especially with SPC) much
-easier.   All of  the keybindings  we  set later  in the  config
-depend on general being loaded.
-
-#+begin_src emacs-lisp
-(use-package general
-  :config
-  (general-evil-setup t))
-#+end_src
-
 ** Theme
 We need  a nice colorscheme.   The Doom  Emacs guys have  a nice
 collection of themes, so let's install them!
@@ -122,28 +109,64 @@ can also use CTRL plus the mouse wheel for zooming in/out.
 (global-set-key (kbd "<C-wheel-up>") 'text-scale-increase)
 (global-set-key (kbd "<C-wheel-down>") 'text-scale-decrease)
 #+end_src
-* RELEASED MAP
+* EVIL Mode
 #+begin_src emacs-lisp
-(global-unset-key (kbd "C-z"))
+(use-package evil
+  :init      ;; tweak evil's configuration before loading it
+  (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
+  (setq evil-want-keybinding nil)
+  (setq evil-vsplit-window-right t)
+  (setq evil-split-window-below t)
+  (setq evil-want-C-i-jump nil)
+  (evil-mode))
+(use-package evil-collection
+  :after evil
+  :config
+  (setq evil-collection-mode-list '(dashboard dired ibuffer))
+  (evil-collection-init))
+(use-package evil-tutor)
+#+end_src
+** General Keybindings
+General.el allows  us to  set keybindings.   As a  longtime Doom
+Emacs user, I  have grown accustomed to using SPC  as the prefix
+key.General makes setting keybindings (especially with SPC) much
+easier.   All of  the keybindings  we  set later  in the  config
+depend on general being loaded.
+
+#+begin_src emacs-lisp
+(use-package general
+  :config
+  (general-evil-setup t))
+(nvmap :states '(normal visual) :keymaps 'override :prefix "SPC"
+       "SPC"   '(counsel-M-x :which-key "Counsel M-x"))
+#+end_src
+* Utility Functions
+#+begin_src emacs-lisp
+(defun delete-current-file()
+  (interactive)
+  (delete-file (buffer-file-name))
+  (kill-current-buffer))
 #+end_src
 * QUICK ACCESS
 #+begin_src emacs-lisp
 (defun open-configuration-file ()
   (interactive)
   (switch-to-buffer (find-file-noselect zero/config-file nil nil t)))
-(global-set-key (kbd "C-z C-f C-c") 'open-configuration-file)
-(general-define-key
- :prefix "C-z C-f"
- "c" '(open-configuration-file :which-key "Configuration File"))
+(nvmap :states '(normal visual) :keymaps 'override :prefix "SPC" :which-key "Quick Actions"
+       "x s" '(save-buffer :which-key "Save buffer")
+       "x c" '(save-buffers-kill-terminal :which-key "Quit"))
+(nvmap :states '(normal visual) :keymaps 'override :prefix "SPC" :which-key "Quick Access"
+       "f f" '(counsel-find-file :which-key "Find files")
+       "f c" '(open-configuration-file :which-key "Configuration File"))
 #+end_src
 * EVALUATE ELISP EXPRESSIONS
 #+begin_src emacs-lisp
-(general-define-key
- :prefix "C-z C-e"
- "r" '(eval-region :which-key "Evaluate Region")
- "l" '(eval-last-sexp :which-key "Evaluate Last Expression")
- "d" '(eval-defun :which-key "Evaluate Function")
- "b" '(eval-buffer :which-key "Evaluate Buffer"))
+(nvmap :states '(normal visual) :keymaps 'override :prefix "SPC"
+       "e b"   '(eval-buffer :which-key "Eval elisp in buffer")
+       "e d"   '(eval-defun :which-key "Eval defun")
+       "e e"   '(eval-expression :which-key "Eval elisp expression")
+       "e l"   '(eval-last-sexp :which-key "Eval last sexression")
+       "e r"   '(eval-region :which-key "Eval region"))
 #+end_src
 * TEXT UTILITY
 #+begin_src emacs-lisp
@@ -159,17 +182,43 @@ can also use CTRL plus the mouse wheel for zooming in/out.
 * BUFFERS AND BOOKMARKS
 
 #+begin_src emacs-lisp
-(general-define-key
- :prefix "C-z C-b"
- "b" '(counsel-switch-buffer :which-key "Switch Buffers")
- "r" '(counsel-buffer-or-recentf :which-key "Recents")
- "c" '(clone-indirect-buffer-other-window :which-key "Clone")
- "n" '(next-buffer :which-key "Next Buffer")
- "p" '(previous-buffer :which-key "Previous Buffer")
- "k" '(delete-window :which-key "Delete Window")
- "d" '(kill-current-buffer :which-key "Kill Buffer"))
+(nvmap :states '(normal visual) :keymaps 'override :prefix "SPC"
+ "b b" '(counsel-switch-buffer :which-key "Switch Buffers")
+ "b r" '(counsel-buffer-or-recentf :which-key "Recents")
+ "b c" '(clone-indirect-buffer-other-window :which-key "Clone")
+ "b n" '(next-buffer :which-key "Next Buffer")
+ "b p" '(previous-buffer :which-key "Previous Buffer")
+ "b k" '(delete-window :which-key "Delete Window")
+ "b d" '(kill-current-buffer :which-key "Kill Buffer"))
 #+end_src
 
+* Windows
+#+begin_src emacs-lisp
+(winner-mode 1)
+(nvmap :prefix "SPC" :which-key "Window"
+       ;; Window splits
+       "w c"   '(evil-window-delete :which-key "Close window")
+       "w n"   '(evil-window-new :which-key "New window")
+       "w s"   '(evil-window-split :which-key "Horizontal split window")
+       "w v"   '(evil-window-vsplit :which-key "Vertical split window")
+       ;; Window motions
+       "w h"   '(evil-window-left :which-key "Window left")
+       "w j"   '(evil-window-down :which-key "Window down")
+       "w k"   '(evil-window-up :which-key "Window up")
+       "w l"   '(evil-window-right :which-key "Window right")
+       "w w"   '(evil-window-next :which-key "Goto next window")
+       ;; winner mode
+       "w <left>"  '(winner-undo :which-key "Winner undo")
+       "w <right>" '(winner-redo :which-key "Winner redo"))
+#+end_src
+* Help
+#+begin_src emacs-lisp
+(nvmap :prefix "SPC" :which-key "Window"
+       "h v"   '(counsel-describe-variable :which-key "Describe variable")
+       "h f"   '(counsel-describe-function :which-key "Describe function")
+       "h c"   '(describe-command :which-key "Describe command")
+       "h k"   '(describe-key :which-key "Describe key"))
+#+end_src
 * TODO FILE MANAGER (DIRED)
 Dired  is  the  file  manager  within  Emacs.   Below,  I  setup
 keybindings for  image previews  (peep-dired).  I've  chosen the
@@ -305,32 +354,33 @@ some tweaking.
 
 ** Keybindings
 #+begin_src emacs-lisp
-(general-define-key
- :prefix "C-z C-o"
-  "*" '(org-ctrl-c-star :which-key "")
-  "+" '(org-ctrl-c-minus :which-key "")
-  "." '(counsel-org-goto :which-key "")
-  "e" '(org-export-dispatch :which-key "")
-  "c" '(org-capture :which-key "")
-  "f" '(org-footnote-new :which-key "")
-  "h" '(org-toggle-heading :which-key "")
-  "i" '(org-toggle-item :which-key "")
-  "n" '(org-store-link :which-key "")
-  "o" '(org-open-at-point :which-key "")
-  "t" '(org-todo :which-key "")
-  "x" '(org-toggle-checkbox :which-key "")
-  "B" '(org-babel-tangle :which-key "")
-  "I" '(org-toggle-inline-images :which-key "")
-  "T" '(org-todo-list :which-key "")
-  "s" '(org-schedule :which-key "")
-  "a" '(org-agenda-list :which-key ""))
+(nvmap :keymaps 'override :prefix "SPC"
+       "o *"   '(org-ctrl-c-star :which-key "Org-ctrl-c-star")
+       "o +"   '(org-ctrl-c-minus :which-key "Org-ctrl-c-minus")
+       "o ."   '(counsel-org-goto :which-key "Counsel org goto")
+       "o e"   '(org-export-dispatch :which-key "Org export dispatch")
+       "o f"   '(org-footnote-new :which-key "Org footnote new")
+       "o h"   '(org-toggle-heading :which-key "Org toggle heading")
+       "o i"   '(org-insert-link :which-key "Org insert link")
+       "o n"   '(org-store-link :which-key "Org store link")
+       "o o"   '(org-open-at-point :which-key "Org follow link")
+       "o p"   '(org-set-property :which-key "Org set property")
+       "o t"   '(org-todo :which-key "Org todo")
+       "o x"   '(org-toggle-checkbox :which-key "Org toggle checkbox")
+       "o B"   '(org-babel-tangle :which-key "Org babel tangle")
+       "o I"   '(org-toggle-inline-images :which-key "Org toggle inline imager")
+       "o T"   '(org-todo-list :which-key "Org todo list")
+       "o a"   '(org-agenda :which-key "Org agenda")
+       "o c"   '(org-capture :which-key "Capture")
+       "o s"   '(org-schedule :which-key "Org Schedule")
+       "o l"   '(org-cliplink :which-key "Org Link from clipboard"))
 #+end_src
 
 ** Defining A Few Things
 #+begin_src emacs-lisp
 (add-hook 'org-mode-hook 'org-indent-mode)
 (setq org-directory zero/org-dir
-      org-agenda-files '(zero-agenda-dir)
+      org-agenda-files (directory-files-recursively zero/org-agenda-dir "\\.org$")
       org-default-notes-file (expand-file-name "notes.org" org-directory)
       org-ellipsis " ... "
       org-log-done 'time
@@ -378,6 +428,7 @@ This lets us create the various TODO tags that we can use in Org.
            "TODO(t)"           
            "REVIEW(r)"
 	       "IDEA(i)"
+	       "THOUGHT(b)"
 	       "ZETTLE(z)"
 	       "ORGANIZE(o)"
            "|"                 
@@ -438,35 +489,66 @@ Use :TOC: to create the table.
   :ensure nil)
 (setq org-export-html-style-include-scripts nil
        org-export-html-style-include-default nil)
-(setq org-export-html-style zero/org-html-css)
+(setq org-html-head zero/org-html-css)
+#+end_src
+** Captures
+#+begin_src emacs-lisp
+(setq org-capture-templates
+   '(("K" "Cliplink capture task" entry (file "bookmarks.org")
+      "* LINK %(org-cliplink-capture) \n" :empty-lines 1)))
 #+end_src
 
-* ORG Roam
+* ORG ROAM
+** Setup
 #+begin_src emacs-lisp
 (use-package org-roam
       :ensure t
       :custom
       (org-roam-directory zero/digital-garden)
+      (org-roam-dailies-directory zero/org-journal-dir)
       (setq org-roam-completion-everywhere t)
       (setq org-roam-v2-ack t)
       :config
       (org-roam-setup)
       ;; If using org-roam-protocol
       (require 'org-roam-protocol))
+#+end_src
 
-(general-define-key
- :prefix "C-z C-r"
-  "b" '(org-roam-buffer-toggle :which-key "")
-  "t" '(org-roam-tag-add :which-key "")
-  "f" '(org-roam-node-find :which-key "")
-  "g" '(org-roam-node-visit :which-key "")
-  "u" '(org-roam-ui-mode :which-key "")
-  "i" '(org-roam-node-insert :which-key "")
-  "h" '(org-id-get-create :which-key "")
-  "c" '(org-roam-capture :which-key "")
-  "j" '(org-roam-dailies-capture-today :which-key ""))
+** Keybindings
 
-(use-package websocket)
+#+begin_src emacs-lisp
+(nvmap :koymaps 'override :prefix "SPC"
+  "r b" '(org-roam-buffer-toggle :which-key "Toggle buffer")
+  "r t" '(org-roam-tag-add :which-key "Add tag")
+  "r f" '(org-roam-node-find :which-key "Find node")
+  "r g" '(org-roam-node-visit :which-key "Goto node")
+  "r u" '(org-roam-ui-mode :which-key "User Interface")
+  "r i" '(org-roam-node-insert :which-key "Insert node")
+  "r h" '(org-id-get-create :which-key "Heading node")
+  "r c" '(org-roam-capture :which-key "Capture node"))
+(nvmap :keymaps 'override :prefix "SPC"
+  "d d" '(org-roam-dailies-capture-today :which-key "Capture today")
+  "d t" '(org-roam-dailies-goto-today :which-key "Goto today")
+  "d y" '(org-roam-dailies-goto-yesterday :which-key "Goto yesterday")
+  "d g" '(org-roam-dailies-goto-date :which-key "Goto date"))
+#+end_src
+
+** Journal Captures
+#+begin_src emacs-lisp
+(setq org-roam-dailies-capture-templates
+      '(
+	("d" "default" entry
+         "* %?"
+         :target (file+head "%<%Y-%m-%d>.org"
+                            "#+title: %<%d %B %Y>"))
+	("l" "linked" entry
+         "* %?\n%l"
+         :target (file+head "%<%Y-%m-%d>.org"
+                            "#+title: %<%d %B %Y>\n"))))
+#+end_src
+** User Interface
+
+#+begin_src emacs-lisp
 (use-package org-roam-ui
        :ensure t
        :config
@@ -519,8 +601,6 @@ writing mode similar to the famous Writeroom editor for OS X.
 #+begin_src emacs-lisp
 (setq default-directory zero/default-dir)
 (setq-default fill-column 64)
-(require 'smart-quotes)
-;;(add-to-list 'ispell-hunspell-dict-paths-alist '("en_US" "/home/dhaval/Dev/dots/emacs/dicts/en_US.aff"))
 (use-package writeroom-mode
   :config
   (setq writeroom-width 76))
@@ -543,27 +623,22 @@ writing mode similar to the famous Writeroom editor for OS X.
 (defun writeroom-dive-in ()
   (interactive)
   (writeroom-mode 1)
-  (smart-quotes-mode 1)
   (auto-fill-mode 1))
 
 (defun writeroom-dive-out ()
   (interactive)
   (writeroom-mode -1)
-  (smart-quotes-mode -1)
   (auto-fill-mode -1))
 
-(general-define-key
- :prefix "C-z C-w"
-  "i"  '(writeroom-dive-in :which-key "")
-  "o"  '(writeroom-dive-out :which-key "")
-  "w"  '(writeroom-mode :which-key "")
-  "s"  '(smart-quotes-mode :which-key "")
-  "f"  '(auto-fill-mode :which-key "")
-  "j"  '(justify-paragraph :which-key "")
-  "m"  '(flyspell-correct-word-before-point :which-key "")
-  "c"  '(count-words :which-key "")
-  "u"  '(join-line :which-key ""))
-#+end_src
+(nvmap :keymaps 'override :prefix "SPC"
+  "w i"  '(writeroom-dive-in :which-key "Dive in")
+  "w o"  '(writeroom-dive-out :which-key "Dive out")
+  "w w"  '(writeroom-mode :which-key "Toggle writeroom mode")
+  "w f"  '(auto-fill-mode :which-key "Toggle autofill mode")
+  "w j"  '(justify-paragraph :which-key "Justify text")
+  "w m"  '(flyspell-correct-word-before-point :which-key "Fix word")
+  "w c"  '(count-words :which-key "Count words")
+  "w u"  '(join-line :which-key "Join lines"))
 #+end_src
 
 * MISC
@@ -587,7 +662,7 @@ writing mode similar to the famous Writeroom editor for OS X.
 ;; Open Dashboard for Emacs Client instead of scratch buffer
 (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*")))
 
-(setq recentf-exclude '("/home/dhaval/Dev/dots/zero/*" "*.git/*"))
+(setq recentf-exclude '("/home/dhaval/Dev/dots/zero/*" "*.git/*" "/home/dhaval/Dev/OrgFiles/DigitalGarden/*"))
 #+end_src
 
 ** Icons
@@ -658,16 +733,51 @@ half-page jumps.  Also, I wanted to adjust the scrolling speed.
           `(("." . ,(concat user-emacs-directory "backups"))))
 #+end_src
 
-* Emacs Experiments
+* HTTP Server
 #+begin_src emacs-lisp
-(use-package nov)
+(use-package simple-httpd
+  :ensure t)
 #+end_src
-* MEOW
-The configuration is in [[file:///~/.emacs.d/meow.el][Meow.el]]
+
+* Quick Utils
 #+begin_src emacs-lisp
-(use-package meow)
+(use-package org-cliplink)
+#+end_src
+
+* TODO Infinity
+Here, we try to implement : [[id:b25ed02f-5267-4574-9484-56ec8818053b][Project Infinity]]
+Code Here: [[file:lisp/infinity.el][Infinity Code]]
+** Setup
+#+begin_src emacs-lisp
 (load 
  (expand-file-name
-  "meow.el"
+  "lisp/infinity.el"
   user-emacs-directory))
+(defun org-roam-node-type (node)
+  (infinity-type node))
+(defun org-roam-node-genre (node)
+  (infinity-genre node))
+(setq org-roam-node-display-template
+      (concat
+          "${title:*} "
+	      (propertize "${type:16}" 'face 'org-level-6)
+	      (propertize "${genre:16}" 'face 'org-level-8)
+	      (propertize "${tags:28}" 'face 'org-tag)))
+;;Its value is #("${title:*} ${tags:10}" 11 21 (face org-tag))
+#+end_src
+
+** Keybindings
+#+begin_src emacs-lisp
+(nvmap :states '(normal visual) :keymaps 'override :prefix "SPC" :which-key "Infinity"
+       "i f" '(infinity-find :which-key "Find")
+       "i u" '(infinity-find-undefined :which-key "Find undefined")
+       "i a" '(infinity-find-archived :which-key "Find Archived")
+       "i e" '(infinity-find-eternal :which-key "Find Eternal")
+       "i A" '(infinity-node-archive :which-key "Archive")
+       "i E" '(infinity-node-eternal :which-key "Eternal")
+       "i t" '(infinity-find-by-type :which-key "Find by type")
+       "i g" '(infinity-find-by-genre :which-key "Find by genre")
+       "i T" '(infinity-set-type :which-key "Set Type")
+       "i G" '(infinity-set-genre :which-key "Set Genre")
+       )
 #+end_src
