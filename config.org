@@ -42,7 +42,7 @@
 (package-initialize)
 (unless package-archive-contents
   (package-refresh-contents))
-(add-to-list 'load-path "~/Hive/dots/zero/lisp/")
+(add-to-list 'load-path "~/.emacs.d/lisp/")
 #+end_src
 
 ** Use-Package
@@ -230,17 +230,9 @@ Utitlity functions loaded at last
 
 * Modules
 #+begin_src emacs-lisp
-(zero--modules-init '(
-		      "ui"
-		      "dashboard"
-		      "files"
-		      "buffer"
-		      "help"
-		      "org"
-		      "window"
-		      "neuron"
-		      "focus"
-		      ;;"discover"
-		      ;;"pheonix"
-		      ))
+(let ((modules
+       (if (eq system-type 'windows-nt)
+	   '("ui" "dashboard" "files" "buffer" "help" "org" "window")
+	 '("ui" "dashboard" "files" "buffer" "help" "org" "window" "neuron" "focus" "discover" "pheonix"))))
+  (zero--modules-init modules))
 #+end_src
