@@ -41,3 +41,18 @@
 #+end_src
 
 
+* Org Functions
+#+begin_src emacs-lisp
+(defun zero-org--collect-headings (keys filter-key)
+   (let ((headings '()))
+     (org-map-entries
+      (lambda ()
+	(if (org-entry-get nil filter-key)
+	    (add-to-list 'headings
+			 (-map
+			  (lambda (key) (org-entry-get nil key))
+			  keys)
+			 t)))
+      t 'file)
+     headings))
+#+end_src
