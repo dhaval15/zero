@@ -56,3 +56,14 @@
       t 'file)
      headings))
 #+end_src
+
+* Counsel Functions
+#+begin_src emacs-lisp
+(defun counsel-pick-file-path ()
+  "Insert file path."
+  (unless (featurep 'counsel) (require 'counsel))
+  (ivy-read "Find file: " 'read-file-name-internal
+            :matcher #'counsel--find-file-matcher
+            :action
+            (lambda (x) x)))
+#+end_src
