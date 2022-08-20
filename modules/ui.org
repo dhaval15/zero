@@ -53,11 +53,12 @@ can also use CTRL plus the mouse wheel for zooming in/out.
 (global-set-key (kbd "C-=") 'text-scale-increase)
 (global-set-key (kbd "C-+") 'text-scale-increase)
 (global-set-key (kbd "C--") 'text-scale-decrease)
-(global-set-key (kbd "<C-wheel-up>") 'text-scale-increase)
-(global-set-key (kbd "<C-wheel-down>") 'text-scale-decrease)
+(global-set-key (kbd "C-M-=") 'default-text-scale-increase)
+(global-set-key (kbd "C-M-+") 'default-text-scale-increase)
+(global-set-key (kbd "C-M--") 'default-text-scale-decrease)
 #+end_src
 
-
-
-
-
+* Default Text Scale
+#+begin_src emacs-lisp
+(use-package default-text-scale)
+#+end_src
