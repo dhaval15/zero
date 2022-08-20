@@ -2,6 +2,15 @@
 :ID:       e080d600-c4ad-4566-bad6-0f48bea5c650
 :END:
 #+title: Discover Module
+* Documentation
+This module is for document managment or also can be used as any
+other service as well.
+- Each entry will contain id, title, file, type, tags.
+- We will  also define a file  naming scheme : look  at denote's
+  file naming scheme.
+- each type will be stored in new folder.
+- Can be opened externally or internally.
+- Types : Doc, Ebook, Pdf
 
 * Setup
 #+begin_src emacs-lisp
@@ -58,7 +67,15 @@ The query is expected to be able to fail, in this situation, run HANDLER."
 * Parsing
 #+begin_src emacs-lisp
 (defun discover--index ()
-    (-map 'vconcat (zero-org--collect-headings '("DISCOVER_ID" "ITEM" "DISCOVER_FILE" "DISCOVER_TYPE" "TAGS") "DISCOVER_ID")))
+    (-map
+     'vconcat
+     (zero-org--collect-headings
+      '("DISCOVER_ID"
+	"ITEM"
+	"DISCOVER_FILE"
+	"DISCOVER_TYPE"
+	"TAGS")
+      "DISCOVER_ID")))
 #+end_src
 
 * Sync
