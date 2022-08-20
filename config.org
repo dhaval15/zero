@@ -1,0 +1,246 @@
+#+TITLE: Emacs Zero
+#+AUTHOR: Dhaval Patel
+
+* DEFINED VARIABLES
+** Files and Directory
+#+begin_src emacs-lisp
+(setq zero/neuron "~/Hive/Realm/Neuron"
+      zero/neuron-db "~/Hive/Realm/Neuron/neuron.db"
+      zero/books-dir "~/Hive/Realm/Books"
+      zero/default-dir "~/Hive"
+      zero/org-dir "~/Hive/Realm"
+      zero/org-agenda-dir "~/Hive/Realm/"
+      zero/org-journal-dir "~/Hive/Realm/DigitalGarden/Journal"
+      zero/zero-logo "~/Hive/dots/zero/zero.png"
+      zero/org-html-css "<link rel=\"stylesheet\" type=\"text/css\" href=\"/home/dhaval/Hive/Realm/public/css/simple.min.css\" />"
+      zero/org-publish-dir "~/Hive/Realm/Publish"
+      zero/html-publish-dir "~/Hive/Realm/public"
+      zero/self-file "~/.emacs.d/zero.org"
+      zero/modules-dir "~/.emacs.d/modules"
+      zero/config-file "~/.emacs.d/config.org")
+(defun zero--modules-init (modules)
+  (dolist (module modules)
+    (org-babel-load-file 
+     (expand-file-name
+      (format "modules/%s.org" module)
+      user-emacs-directory))))
+#+end_src
+** User Interface
+#+begin_src emacs-lisp
+(setq zero/fonts "Fira Code")
+#+end_src
+* Basic
+#+begin_src emacs-lisp
+(org-babel-load-file zero/self-file)
+#+end_src
+* BASIC SETUP
+** Setup Package.el To Work With MELPA
+#+begin_src emacs-lisp
+(require 'package)
+(add-to-list 'package-archives
+             '("melpa" . "https://melpa.org/packages/"))
+(package-initialize)
+(unless package-archive-contents
+  (package-refresh-contents))
+(add-to-list 'load-path "~/Hive/dots/zero/lisp/")
+#+end_src
+
+** Use-Package
+Install  use-package  and  enable  ':ensure  t'  globally.   The
+':ensure'  keyword  causes  the  package(s)  within  use-package
+statements to be installed  automatically if not already present
+on your  system.  To avoid  having to  add ':ensure t'  to every
+use-package     statement    in     this    config,     I    set
+'use-package-always-ensure'.
+
+#+begin_src emacs-lisp
+(unless (package-installed-p 'use-package)
+  (package-install 'use-package))
+(setq use-package-always-ensure t)
+#+end_src
+** Tweaks
+By default in  Emacs, we don't have ability to  select text, and
+then  start typing  and  our new  text  replaces the  selection.
+Let's fix that!
+
+#+begin_src emacs-lisp
+(delete-selection-mode t)
+#+end_src
+
+* Evil
+#+begin_src emacs-lisp
+(zero--modules-init '("evil"))
+#+end_src
+** Keybindings
+#+begin_src emacs-lisp
+(nvmap :states '(normal visual) :keymaps 'override :prefix "SPC z" :which-key "Quick Access"
+       "z" '(zero-self :which-key "Zero")
+       "f" '(zero-module-find :which-key "Find")
+       "l" '(zero-module-load :which-key "Load")
+       "c" '(zero-config :which-key "Config File"))
+#+end_src
+* EVALUATE ELISP EXPRESSIONS
+#+begin_src emacs-lisp
+(nvmap :states '(normal visual) :keymaps 'override :prefix "SPC"
+       "e b"   '(eval-buffer :which-key "Eval elisp in buffer")
+       "e d"   '(eval-defun :which-key "Eval defun")
+       "e e"   '(eval-expression :which-key "Eval elisp expression")
+       "e l"   '(eval-last-sexp :which-key "Eval last sexression")
+       "e r"   '(eval-region :which-key "Eval region"))
+#+end_src
+* TODO FILE MANAGER (DIRED)
+Dired  is  the  file  manager  within  Emacs.   Below,  I  setup
+keybindings for  image previews  (peep-dired).  I've  chosen the
+format of 'SPC d' plus 'key'.
+
+** Keybindings To Open Dired
+| COMMAND    | DESCRIPTION                        | KEYBINDING |
+|------------+------------------------------------+------------|
+| dired      | /Open dired file manager/            | SPC d d    |
+| dired-jump | /Jump to current directory in dired/ | SPC d j    |
+
+** Keybindings Within Dired
+| COMMAND            | DESCRIPTION                                 | KEYBINDING |
+|--------------------+---------------------------------------------+------------|
+| dired-view-file    | /View file in dired/                          | SPC d v    |
+| dired-up-directory | /Go up in directory tree/                     | h          |
+| dired-find-file    | /Go down in directory tree (or open if file)/ | l          |
+
+** Keybindings For Peep-Dired-Mode
+| COMMAND              | DESCRIPTION                              | KEYBINDING |
+|----------------------+------------------------------------------+------------|
+| peep-dired           | /Toggle previews within dired/             | SPC d p    |
+| peep-dired-next-file | /Move to next file in peep-dired-mode/     | j          |
+| peep-dired-prev-file | /Move to previous file in peep-dired-mode/ | k          |
+
+#+begin_src emacs-lisp
+(use-package all-the-icons-dired)
+(use-package dired-open)
+(use-package peep-dired)
+
+;; (nvmap :states '(normal visual) :keymaps 'override :prefix "SPC"
+;;                "d d" '(dired :which-key "Open dired")
+;;                "d j" '(dired-jump :which-key "Dired jump to current")
+;;                "d p" '(peep-dired :which-key "Peep-dired"))
+
+;;(with-eval-after-load 'dired
+  ;;(define-key dired-mode-map (kbd "M-p") 'peep-dired)
+  ;;(evil-define-key 'normal dired-mode-map (kbd "h") 'dired-up-directory)
+  ;;(evil-define-key 'normal dired-mode-map (kbd "l") 'dired-open-file) ; use dired-find-file instead if not using dired-open package
+  ;;(evil-define-key 'normal peep-dired-mode-map (kbd "j") 'peep-dired-next-file)
+  ;;(evil-define-key 'normal peep-dired-mode-map (kbd "k") 'peep-dired-prev-file))
+
+(add-hook 'peep-dired-hook 'evil-normalize-keymaps)
+;; Get file icons in dired
+(add-hook 'dired-mode-hook 'all-the-icons-dired-mode)
+;; With dired-open plugin, you can launch external programs for certain extensions
+;; For example, I set all .png files to open in 'sxiv' and all .mp4 files to open in 'mpv'
+(setq dired-open-extensions '(("gif" . "sxiv")
+                              ("jpg" . "sxiv")
+                              ("png" . "sxiv")
+                              ("mkv" . "mpv")
+                              ("mp4" . "mpv")))
+#+end_src
+
+* TODO COMPANY Mode
+#+begin_src emacs-lisp
+(use-package company)
+#+end_src
+* Counsel - Ivy
+Narrowing Framework
+#+begin_src emacs-lisp
+(use-package counsel :ensure t)
+(ivy-mode)
+;;(use-package helm-lsp :ensure t)
+#+end_src
+* TODO MISC
+Reorganize
+** Icons
+This is  an icon  set that  can be  used with  dashboard, dired,
+ibuffer and other Emacs programs.
+  
+#+begin_src emacs-lisp
+(use-package all-the-icons)
+#+end_src
+
+** GUI Tweasks
+#+begin_src emacs-lisp
+(menu-bar-mode -1)
+(tool-bar-mode -1)
+(scroll-bar-mode -1)
+(global-display-line-numbers-mode 1)
+(setq frame-resize-pixelwise t)
+(auto-fill-mode t)
+(use-package doom-modeline
+  :config
+  (setq doom-modeline-height 22
+	doom-modeline-icon t))
+(doom-modeline-mode 1)
+#+end_src
+
+** Which Key
+Which-key  is a  minor  mode  for Emacs  that  displays the  key
+bindings following your currently  entered incomplete command (a
+prefix) in a popup.
+
+=NOTE:= Which-key has an annoying bug  that in some fonts and font
+sizes,  the bottom  row  in which  key gets  covered  up by  the
+modeline.
+
+#+begin_src emacs-lisp
+(use-package which-key
+  :init
+  (setq which-key-side-window-location 'bottom
+        which-key-sort-order #'which-key-key-order-alpha
+        which-key-sort-uppercase-first nil
+        which-key-add-column-padding 1
+        which-key-max-display-columns nil
+        which-key-min-display-lines 6
+        which-key-side-window-slot -10
+        which-key-side-window-max-height 0.25
+        which-key-idle-delay 0.8
+        which-key-max-description-length 25
+        which-key-allow-imprecise-window-fit t
+        which-key-separator " → " ))
+(which-key-mode)
+#+end_src
+
+** Scrolling
+Emacs'  default  scrolling is  annoying  because  of the  sudden
+half-page jumps.  Also, I wanted to adjust the scrolling speed.
+
+#+begin_src emacs-lisp
+(setq scroll-conservatively 101) ;; value greater than 100 gets rid of half page jumping
+(setq mouse-wheel-scroll-amount '(3 ((shift) . 3))) ;; how many lines at a time
+(setq mouse-wheel-progressive-speed t) ;; accelerate scrolling
+(setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
+#+end_src
+
+** Clean Up
+#+begin_src emacs-lisp
+(setq backup-directory-alist
+          `(("." . ,(concat user-emacs-directory "backups"))))
+#+end_src
+
+* TODO Zero Utils
+Utitlity functions loaded at last
+#+begin_src emacs-lisp
+(use-package org-cliplink)
+#+end_src
+
+* Modules
+#+begin_src emacs-lisp
+(zero--modules-init '(
+		      "ui"
+		      "dashboard"
+		      "files"
+		      "buffer"
+		      "help"
+		      "org"
+		      "window"
+		      "neuron"
+		      "focus"
+		      ;;"discover"
+		      ;;"pheonix"
+		      ))
+#+end_src

@@ -1,0 +1,43 @@
+#+title: Zero
+
+* Quick Acess
+#+begin_src emacs-lisp
+(defun zero-config ()
+  (interactive)
+  (switch-to-buffer (find-file-noselect zero/config-file nil nil t)))
+(defun zero-self ()
+  (interactive)
+  (switch-to-buffer (find-file-noselect zero/self-file nil nil t)))
+#+end_src
+* Module Functions
+#+begin_src emacs-lisp
+(defun zero--modules ()
+  (-map
+   (lambda (module-path) (substring (car (last (split-string module-path "/"))) 0 -4))
+   (directory-files-recursively zero/modules-dir "\\.org$")))
+
+(defun zero--modules-init (modules)
+  (dolist (module modules)
+    (org-babel-load-file 
+     (zero--module-path module))))
+
+(defun zero--module-path (module)
+   (format "%s/%s.org" zero/modules-dir module))
+
+(defun zero-module-load (module)
+  (interactive
+   (let ((completion-ignore-case  t))
+     (list (completing-read "Module: " (zero--modules) nil t))))
+  (org-babel-load-file 
+   (zero--module-path module)))
+
+(defun zero-module-find (module)
+  (interactive
+   (let ((completion-ignore-case  t))
+     (list (completing-read "Module: " (zero--modules) nil t))))
+  (switch-to-buffer
+   (find-file-noselect 
+    (zero--module-path module) nil nil t)))
+#+end_src
+
+

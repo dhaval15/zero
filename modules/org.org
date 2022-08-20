@@ -1,0 +1,230 @@
+#+TITLE: Org Module
+Org Mode is  =THE= killer feature within Emacs.  But  it does need
+some tweaking.
+* Utility Functions
+#+begin_src emacs-lisp
+(defun org-show-next-heading-tidily ()
+  "Show next entry, keeping other entries closed."
+  (interactive)
+  (if (save-excursion (end-of-line) (outline-invisible-p))
+      (progn (org-show-entry) (show-children))
+    (outline-next-heading)
+    (unless (and (bolp) (org-on-heading-p))
+      (org-up-heading-safe)
+      (hide-subtree)
+      (error "Boundary reached"))
+    (org-overview)
+    (org-reveal t)
+    (org-show-entry)
+    (show-children)))
+
+(defun org-show-previous-heading-tidily ()
+  "Show previous entry, keeping other entries closed."
+  (interactive)
+  (let ((pos (point)))
+    (outline-previous-heading)
+    (unless (and (< (point) pos) (bolp) (org-on-heading-p))
+      (goto-char pos)
+      (hide-subtree)
+      (error "Boundary reached"))
+    (org-overview)
+    (org-reveal t)
+    (org-show-entry)
+    (show-children)))
+#+end_src
+* Keybindings
+#+begin_src emacs-lisp
+(general-define-key "C-<tab>" 'org-show-next-heading-tidily)
+(general-define-key "C-<iso-lefttab>" 'org-show-previous-heading-tidily)
+(nvmap :keymaps 'override :prefix "SPC o"
+       "]"   '(org-show-next-heading-tidily :which-key "Next Heading")
+       "["   '(org-show-previous-heading-tidily :which-key "Previous Heading")
+       "*"   '(org-ctrl-c-star :which-key "Org-ctrl-c-star")
+       "+"   '(org-ctrl-c-minus :which-key "Org-ctrl-c-minus")
+       "."   '(counsel-org-goto :which-key "Counsel org goto")
+       "e"   '(org-export-dispatch :which-key "Org export dispatch")
+       "f"   '(org-footnote-new :which-key "Org footnote new")
+       "h"   '(org-toggle-heading :which-key "Org toggle heading")
+       "i"   '(org-insert-link :which-key "Org insert link")
+       "n"   '(org-store-link :which-key "Org store link")
+       "o"   '(org-open-at-point :which-key "Org follow link")
+       "p"   '(org-set-property :which-key "Org set property")
+       "t"   '(org-todo :which-key "Org todo")
+       "x"   '(org-toggle-checkbox :which-key "Org toggle checkbox")
+       "B"   '(org-babel-tangle :which-key "Org babel tangle")
+       "I"   '(org-toggle-inline-images :which-key "Org toggle inline imager")
+       "T"   '(org-todo-list :which-key "Org todo list")
+       "a"   '(org-agenda :which-key "Org agenda")
+       "c"   '(org-capture :which-key "Capture")
+       "s"   '(org-schedule :which-key "Org Schedule")
+       "l"   '(org-cliplink :which-key "Org Link from clipboard"))
+#+end_src
+
+* Defining A Few Things
+#+begin_src emacs-lisp
+(add-hook 'org-mode-hook 'org-indent-mode)
+(setq org-directory zero/org-dir
+      org-agenda-files (directory-files-recursively zero/org-agenda-dir "\\.org$")
+      org-default-notes-file (expand-file-name "notes.org" org-directory)
+      org-ellipsis " ... "
+      org-log-done 'time
+      org-refile-targets '(("/home/dhaval/Dev/Write/archives/daily.org" :maxlevel . 1)
+                           ("/home/dhaval/Dev/Write/archives/tasks.org" :maxlevel . 1))
+      org-journal-dir zero/org-journal-dir
+      org-journal-date-format "%B %d, %Y (%A) "
+      org-journal-file-format "%Y-%m-%d.org"
+      org-hide-emphasis-markers t)
+(setq org-src-preserve-indentation nil
+      org-src-tab-acts-natively t
+      org-edit-src-content-indentation 0)
+(setq org-startup-folded t
+      org-fontify-quote-and-verse-blocks t)
+#+end_src
+
+* Enabling Org Bullets
+Org-bullets gives us attractive bullets rather than asterisks.
+#+begin_src emacs-lisp
+(use-package org-bullets
+  :config
+    (setq org-bullets-bullet-list '("●" "○" "◆" "◇" "•")))
+(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+#+end_src
+
+* Org Link Abbreviations
+This allows for the use of abbreviations that will get expanded out into a lengthy URL.
+   
+#+begin_src emacs-lisp
+;; An example of how this works.
+;; [[arch-wiki:Name_of_Page][Description]]
+(setq org-link-abbrev-alist    ; This overwrites the default Doom org-link-abbrev-list
+        '(("google" . "http://www.google.com/search?q=")
+          ("arch-wiki" . "https://wiki.archlinux.org/index.php/")
+          ("ddg" . "https://duckduckgo.com/?q=")
+          ("wiki" . "https://en.wikipedia.org/wiki/")))
+#+end_src
+
+#+begin_src emacs-lisp
+#+end_src
+
+* Org Todo Keywords
+This lets us create the various TODO tags that we can use in Org.
+   
+#+begin_src emacs-lisp
+(setq org-todo-keywords        
+        '((sequence
+           "TODO(t)"           
+           "REVIEW(r)"
+	       "IDEA(i)"
+	       "THOUGHT(b)"
+	       "ZETTLE(z)"
+	       "ORGANIZE(o)"
+           "|"                 
+           "DONE(d)"
+           "CANCELLED(c)" )))  
+#+end_src
+
+* Source Code Block Tag Expansion
+Org-tempo is a package that allows for '<s' followed by TAB to expand to a begin_src tag.  Other expansions available include:
+
+| Type + TAB | Expands to ...                          |
+|------------+-----------------------------------------|
+| <a         | '#+BEGIN_EXPORT ascii' … '#+END_EXPORT  |
+| <c         | '#+BEGIN_CENTER' … '#+END_CENTER'       |
+| <C         | '#+BEGIN_COMMENT' … '#+END_COMMENT'     |
+| <e         | '#+BEGIN_EXAMPLE' … '#+END_EXAMPLE'     |
+| <E         | '#+BEGIN_EXPORT' … '#+END_EXPORT'       |
+| <h         | '#+BEGIN_EXPORT html' … '#+END_EXPORT'  |
+| <l         | '#+BEGIN_EXPORT latex' … '#+END_EXPORT' |
+| <q         | '#+BEGIN_QUOTE' … '#+END_QUOTE'         |
+| <s         | '#+BEGIN_SRC' … '#+END_SRC'             |
+| <v         | '#+BEGIN_VERSE' … '#+END_VERSE'         |
+
+#+begin_src emacs-lisp
+(use-package org-tempo
+  :config
+    (setq org-tempo-keywords-alist
+      '(("L" . "latex")
+        ("H" . "html")
+        ("A" . "ascii")
+        ("i" . "index")
+        ("T" . "title")
+        ("S" . "subtitle")))
+  :ensure nil) ;; tell use-package not to try to install org-tempo since it's already there.
+#+end_src
+
+* Source Code Block Syntax Highlighting
+We want the same syntax highlighting in source blocks as in the native language files.
+
+#+begin_src emacs-lisp
+(setq org-src-fontify-natively t
+    org-src-tab-acts-natively t
+    org-confirm-babel-evaluate nil
+    org-edit-src-content-indentation 0)
+#+end_src
+
+* Automatically Create Table of Contents
+Toc-org helps you to have an up-to-date table of contents in org files without exporting (useful useful for README files on GitHub).
+Use :TOC: to create the table.
+
+#+begin_src emacs-lisp
+  (use-package toc-org
+    :commands toc-org-enable
+    :init (add-hook 'org-mode-hook 'toc-org-enable))
+#+end_src
+
+* Make M-RET Not Add Blank Lines
+#+begin_src emacs-lisp
+(setq org-blank-before-new-entry (quote ((heading . nil)
+                                         (plain-list-item . nil))))
+#+end_src
+
+* Org Export To Manpage Format
+#+begin_src emacs-lisp
+(use-package ox-man
+  :ensure nil)
+(setq org-export-html-style-include-scripts nil
+       org-export-html-style-include-default nil)
+(setq org-html-head zero/org-html-css)
+#+end_src
+* Captures
+#+begin_src emacs-lisp
+(setq org-capture-templates
+   '(("K" "Cliplink capture task" entry (file "bookmarks.org")
+      "* LINK %(org-cliplink-capture) \n" :empty-lines 1)))
+#+end_src
+
+* Export
+#+begin_src emacs-lisp
+(setq org-export-html-validation-link nil)
+#+end_src
+
+* Super Agenda
+#+begin_src emacs-lisp
+(use-package org-super-agenda)
+(org-super-agenda-mode t)
+(setq org-agenda-prefix-format
+      '((agenda . " %i %?-12t% s")
+	(todo . " %i %-12:c")
+	(tags . " %i %-12:c")
+	(search . " %i %-12:c")))
+(setq org-super-agenda-groups '((:auto-category t)))
+(setq spacemacs-theme-org-agenda-height nil
+      org-agenda-time-grid '((daily today require-timed) "----------------------" nil)
+      org-agenda-skip-scheduled-if-done t
+      org-agenda-skip-deadline-if-done t
+      org-agenda-include-deadlines t
+      org-agenda-include-diary t
+      org-agenda-block-separator nil
+      org-agenda-compact-blocks t
+      org-agenda-start-with-log-mode t)
+#+end_src
+
+* Experiment
+#+begin_src emacs-lisp
+(use-package org-view-mode
+  :ensure t)
+#+end_src
+
+#+begin_verse
+Hello
+#+end_verse
