@@ -67,3 +67,11 @@
             :action
             (lambda (x) x)))
 #+end_src
+
+* Zero Line Functions
+#+begin_src emacs-lisp
+(defun zero--insert-line (text)
+  (open-line 1)
+  (next-line 1)
+  (insert text))
+#+end_src
