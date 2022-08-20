@@ -36,7 +36,6 @@
   (let ((pheonix-node (org-roam-node-read)))
     (zero--insert-line (format "* %s" (org-roam-node-title pheonix-node)))
     (zero--insert-line ":PROPERTIES:")
-    (zero--insert-line ":PHEONIX_PUBLISH: t")
     (zero--insert-line (format ":PHEONIX_ID: %s" (org-roam-node-id pheonix-node)))
     (zero--insert-line ":END:")))
 
@@ -65,26 +64,21 @@
 (defun pheonix--parse ()
   (-group-by
    'pheonix--group
-   (-filter
-    (lambda (entry) (car entry))
-    (org-element-map (org-element-parse-buffer) 'headline
-      (lambda (headline)
-	(list
-	 (org-element-property :PHEONIX_PUBLISH headline) ;; 0
-	 (org-element-property :raw-value headline) ;; 1
-	 (org-element-property :PHEONIX_GROUP headline) ;; 2
-	 (org-element-property :PHEONIX_ID headline) ;; 3
-	 (org-element-property :PHEONIX_SEARCH headline) ;; 4
-	 (org-element-property :PHEONIX_WITH_TITLE headline) ;; 5
-	 (org-element-property :PHEONIX_ONLY_CONTENTS headline) ;; 6
-	 ))))))
+   (zero-org--collect-headings
+    '("PHEONIX_ID"
+      "ITEM"
+      "PHEONIX_GROUP"
+      "PHEONIX_SEARCH"
+      "PHEONIX_WITH_TITLE"
+      "PHEONIX_ONLY_CONTENTS")
+    "PHEONIX_PUBLISH")))
 
+(defun pheonix--id (headline) (nth 0 headline))
 (defun pheonix--title (headline) (nth 1 headline))
 (defun pheonix--group (headline) (nth 2 headline))
-(defun pheonix--id (headline) (nth 3 headline))
-(defun pheonix--search (headline) (nth 4 headline))
-(defun pheonix--with-title (headline) (nth 5 headline))
-(defun pheonix--only-contents (headline) (nth 6 headline))
+(defun pheonix--search (headline) (nth 3 headline))
+(defun pheonix--with-title (headline) (nth 4 headline))
+(defun pheonix--only-contents (headline) (nth 5 headline))
 #+end_src
 * Index
 #+begin_src emacs-lisp
@@ -167,3 +161,4 @@
      "\""
      (if only-contents " :only-contents t" nil))))
 #+end_src
+
