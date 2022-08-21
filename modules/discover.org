@@ -16,7 +16,8 @@ other service as well.
 #+begin_src emacs-lisp
 (setq discover--types '("Pdf" "Doc" "Book" "Link"))
 (setq discover--db-location "~/Dev/OrgFiles/Discover/index.db")
-(setq discover--index-dir "~/Dev/OrgFiles/Discover/")
+(setq discover--index-dir "~/Dev/OrgFiles/Discover/.index")
+(setq discover--files-dir "~/Dev/OrgFiles/Discover/")
 (defun discover--index-files ()
   (directory-files-recursively discover--index-dir "\\.org$"))
 (setq discover--db (emacsql-sqlite discover--db-location))
@@ -127,19 +128,29 @@ The displayed title is formatted according to `discover-node-display-template'."
   (let ((node (discover--node-read)))
     (discover--open-file (discover--file node) (discover--type node))))
 #+end_src
-* Insert
+* Insert 
 #+begin_src emacs-lisp
 (defun discover-node-insert (title)
   (interactive (list (read-string "Title: ")))
-  (let ((discover-id (org-id-new))
-	(discover-file-path (counsel-pick-file-path))
-	(type (completing-read "Type: " discover--types nil t)))
-    (zero--insert-line (format "* %s" title))
+  (let* ((discover-id (org-id-new))
+	(original-file-path (counsel-pick-file-path))
+	(type (completing-read "Type: " discover--types nil t))
+	(extension (file-name-extension original-file-path))
+	(discover-file-relative-path
+	 (discover--node-file-relative-path title type extension)))
+    (discover--node-heading-matter title discover-file-relative-path type)))
+
+(defun discover--node-file-relative-path (title type extension)
+  (format "%s/%s" type
+	  (zero--unique-file-name title extension)))
+
+(defun discover--node-heading-matter (title discover-file-path type)
+  (zero--insert-line (format "* %s" title))
     (zero--insert-line ":PROPERTIES:")
     (zero--insert-line (format ":DISCOVER_ID: %s" (org-id-new)))
     (zero--insert-line (format ":DISCOVER_FILE: %s"  discover-file-path))
     (zero--insert-line (format ":DISCOVER_TYPE: %s"  type))
-    (zero--insert-line ":END:")))
+    (zero--insert-line ":END:"))
 #+end_src
 * Files
 #+begin_src emacs-lisp
@@ -170,3 +181,4 @@ The displayed title is formatted according to `discover-node-display-template'."
     nil nil t)))
 
 #+end_src
+
