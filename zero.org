@@ -75,3 +75,46 @@
   (next-line 1)
   (insert text))
 #+end_src
+
+* Zero Slug
+#+begin_src emacs-lisp
+(defconst zero--punctuation-regexp "[][{}!@#$%^&*()=+'\"?,.\|;:~`‘’“”/]*"
+  "Punctionation that is removed from file names.
+We consider those characters illegal for our purposes.")
+
+(defvar zero-punctuation-excluded-extra-regexp nil
+  "Additional punctuation that is removed from file names.
+This variable is for advanced users who need to extend the
+`zero--punctuation-regexp'.  Once we have a better
+understanding of what we should be omitting, we will update
+things accordingly.")
+
+(defun zero--slug-no-punct (str)
+  "Convert STR to a file name slug."
+  (replace-regexp-in-string
+   (concat zero--punctuation-regexp zero-punctuation-excluded-extra-regexp)
+   "" str))
+
+(defun zero--slug-hyphenate (str)
+  "Replace spaces and underscores with hyphens in STR.
+Also replace multiple hyphens with a single one and remove any
+leading and trailing hyphen."
+  (replace-regexp-in-string
+   "^-\\|-$" ""
+   (replace-regexp-in-string
+    "-\\{2,\\}" "-"
+    (replace-regexp-in-string "_\\|\s+" "-" str))))
+
+(defun zero--sluggify (str)
+  "Make STR an appropriate slug for file names and related."
+  (downcase (zero--slug-hyphenate (zero--slug-no-punct str))))
+
+(defconst zero--id-format "%Y%m%dT%H%M%S"
+  "Format of ID prefix of a note's filename.")
+
+(defun zero--unique-file-name (title ext)
+  (format "%s-%s.%s"
+	  (format-time-string zero--id-format)
+	  (zero--sluggify title)
+	  extension))
+#+end_src
