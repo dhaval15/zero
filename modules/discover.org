@@ -16,7 +16,7 @@ other service as well.
 #+begin_src emacs-lisp
 (setq discover--types '("Pdf" "Doc" "Book" "Link"))
 (setq discover--db-location "~/Hive/Realm/Discover/index.db")
-(setq discover--index-dir "~/Hive/Real:m/Discover/.index")
+(setq discover--index-dir "~/Hive/Realm/Discover/.index/")
 (setq discover--files-dir "~/Hive/Realm/Discover/")
 (defun discover--index-files ()
   (directory-files-recursively discover--index-dir "\\.org$"))
@@ -138,11 +138,15 @@ The displayed title is formatted according to `discover-node-display-template'."
 	(extension (file-name-extension original-file-path))
 	(discover-file-relative-path
 	 (discover--node-file-relative-path title type extension)))
+    (discover--copy-file original-file-path discover-file-relative-path)
     (discover--node-heading-matter title discover-file-relative-path type)))
 
 (defun discover--node-file-relative-path (title type extension)
   (format "%s/%s" type
 	  (zero--unique-file-name title extension)))
+
+(defun discover--copy-file (from to)
+    (shell-command (format "cp \"%s\" %s" from (expand-file-name to discover--files-dir))))
 
 (defun discover--node-heading-matter (title discover-file-path type)
   (zero--insert-line (format "* %s" title))
@@ -162,7 +166,7 @@ The displayed title is formatted according to `discover-node-display-template'."
 
 (defun discover--open-file (file type)
   (let ((command (cdr (assoc type discover--commands))))
-    (if command (call-process-shell-command (format "%s \"%s\"" command file) nil 0))))
+    (if command (call-process-shell-command (format "%s \"%s\"" command (expand-file-name file discover--files-dir)) nil 0))))
 
 (setq discover--commands '(("Pdf" . "zathura")
 			   ("Book" . "zathura")
@@ -181,4 +185,5 @@ The displayed title is formatted according to `discover-node-display-template'."
     nil nil t)))
 
 #+end_src
+
 
