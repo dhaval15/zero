@@ -15,9 +15,9 @@ other service as well.
 * Setup
 #+begin_src emacs-lisp
 (setq discover--types '("Pdf" "Doc" "Book" "Link"))
-(setq discover--db-location "~/Dev/OrgFiles/Discover/index.db")
-(setq discover--index-dir "~/Dev/OrgFiles/Discover/.index")
-(setq discover--files-dir "~/Dev/OrgFiles/Discover/")
+(setq discover--db-location "~/Hive/Realm/Discover/index.db")
+(setq discover--index-dir "~/Hive/Real:m/Discover/.index")
+(setq discover--files-dir "~/Hive/Realm/Discover/")
 (defun discover--index-files ()
   (directory-files-recursively discover--index-dir "\\.org$"))
 (setq discover--db (emacsql-sqlite discover--db-location))
