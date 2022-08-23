@@ -133,13 +133,19 @@ The displayed title is formatted according to `discover-node-display-template'."
 (defun discover--node-read ()
    (let* ((completion-ignore-case  t)
 	 (nodes (discover--node-read-completions))
-	 (node (completing-read "Discover: " nodes nil t)))
-     (cdr (assoc node nodes))))
+	 (node (completing-read "Discover: " nodes nil nil))
+	 (final-node (cdr (assoc node nodes))))
+     (if final-node final-node node)))
 
 (defun discover-node-find ()
   (interactive)
   (let ((node (discover--node-read)))
-    (discover--open-file (discover--file node) (discover--type node))))
+    (if (stringp node)
+      (let 
+	  ((original-path (counsel-pick-file-path))
+	   (type (completing-read "Type: " discover--types nil t)))
+	(discover-node-create original-path node type))
+	(discover--open-file (discover--file node) (discover--type node)))))
 
 (defun discover-node-insert ()
   (interactive)
@@ -148,11 +154,13 @@ The displayed title is formatted according to `discover-node-display-template'."
 #+end_src
 * Create 
 #+begin_src emacs-lisp
-(defun discover-node-create (title)
-  (interactive (list (read-string "Title: ")))
+(defun discover-node-create (original-file-path title type)
+  (interactive
+   (list
+    (counsel-pick-file-path)
+    (read-string "Title: ")
+    (completing-read "Type: " discover--types nil t)))
   (let* ((discover-id (org-id-new))
-	(original-file-path (counsel-pick-file-path))
-	(type (completing-read "Type: " discover--types nil t))
 	(extension (file-name-extension original-file-path))
 	(discover-file-relative-path
 	 (discover--node-file-relative-path title type extension)))
@@ -201,7 +209,6 @@ The displayed title is formatted according to `discover-node-display-template'."
 #+end_src
 
 
-
 * Follow Link
 #+begin_src emacs-lisp
 (require 'ol)
@@ -213,3 +220,5 @@ The displayed title is formatted according to `discover-node-display-template'."
   (let ((node (discover--node-from-id id)))
     (discover--open-file (discover--file node) (discover--type node))))
 #+end_src
+
+
