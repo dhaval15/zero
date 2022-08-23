@@ -11,16 +11,22 @@ other service as well.
 - each type will be stored in new folder.
 - Can be opened externally or internally.
 - Types : Doc, Ebook, Pdf
-
 * Setup
 #+begin_src emacs-lisp
-(setq discover--types '("Pdf" "Doc" "Book" "Link"))
 (setq discover--db-location "~/Hive/Realm/Discover/index.db")
 (setq discover--index-dir "~/Hive/Realm/Discover/.index/")
 (setq discover--files-dir "~/Hive/Realm/Discover/")
+
+(setq discover--types '("Pdf" "Doc" "Book" "Link"))
+(setq discover--commands '(("Pdf" . "zathura")
+			   ("Book" . "zathura")
+			   ("Link" . "chromium")
+			   ("Doc" . "libreoffice")))
+
+(setq discover--db (emacsql-sqlite discover--db-location))
+
 (defun discover--index-files ()
   (directory-files-recursively discover--index-dir "\\.org$"))
-(setq discover--db (emacsql-sqlite discover--db-location))
 (defun discover--db-query (sql &rest args)
   (apply #'emacsql discover--db sql args))
 
@@ -49,8 +55,9 @@ The query is expected to be able to fail, in this situation, run HANDLER."
 (nvmap :states '(normal visual) :keymaps 'override :prefix "SPC t" :which-key "Discover"
        "f" '(discover-node-find :which-key "Find")
        "i" '(discover-node-insert :which-key "Insert")
+       "c" '(discover-node-create :which-key "Create")
        "t" '(discover-index-find :which-key "Index")
-       "s" '(org-roam-node-insert :which-key "Sync"))
+       "s" '(discover-sync :which-key "Sync"))
 #+end_src
 * Utils
 #+begin_src emacs-lisp
@@ -101,7 +108,13 @@ The query is expected to be able to fail, in this situation, run HANDLER."
 #+begin_src emacs-lisp
 (defun discover--node-list ()
   (discover--db-query [:select *
-             :from nodes]))
+			       :from nodes]))
+
+(defun discover--node-from-id (id)
+  (car (discover--db-query [:select *
+				    :from nodes
+				    :where (= id $s1)]
+			   id)))
 
 (defun discover--node-read-completions ()
   "Return an alist for node completion.
@@ -127,10 +140,15 @@ The displayed title is formatted according to `discover-node-display-template'."
   (interactive)
   (let ((node (discover--node-read)))
     (discover--open-file (discover--file node) (discover--type node))))
+
+(defun discover-node-insert ()
+  (interactive)
+  (let ((node (discover--node-read)))
+    (insert (format "[[discover:%s][%s]]" (discover--id node) (discover--title node)))))
 #+end_src
-* Insert 
+* Create 
 #+begin_src emacs-lisp
-(defun discover-node-insert (title)
+(defun discover-node-create (title)
   (interactive (list (read-string "Title: ")))
   (let* ((discover-id (org-id-new))
 	(original-file-path (counsel-pick-file-path))
@@ -168,10 +186,6 @@ The displayed title is formatted according to `discover-node-display-template'."
   (let ((command (cdr (assoc type discover--commands))))
     (if command (call-process-shell-command (format "%s \"%s\"" command (expand-file-name file discover--files-dir)) nil 0))))
 
-(setq discover--commands '(("Pdf" . "zathura")
-			   ("Book" . "zathura")
-			   ("Link" . "chromium")
-			   ("Doc" . "libreoffice")))
 
 (defun discover-index-find (module)
   (interactive
@@ -187,3 +201,15 @@ The displayed title is formatted according to `discover-node-display-template'."
 #+end_src
 
 
+
+* Follow Link
+#+begin_src emacs-lisp
+(require 'ol)
+
+(org-link-set-parameters "discover"
+                         :follow #'org-discover-open)
+
+(defun org-discover-open (id _)
+  (let ((node (discover--node-from-id id)))
+    (discover--open-file (discover--file node) (discover--type node))))
+#+end_src
