@@ -8,9 +8,10 @@
 #+end_src
 
 * Keybindings
-
 #+begin_src emacs-lisp
 (nvmap :states '(normal visual) :keymaps 'override :prefix "SPC f" :which-key "Quick Access"
        "h" '(counsel-find-file-at-home :which-key "Find files")
        "f" '(counsel-find-file :which-key "Find files"))
+(nvmap :states '(normal visual) :keymaps 'override :prefix "SPC" :which-key "Quick Access"
+       "." '(counsel-fzf :which-key "FZF"))
 #+end_src
