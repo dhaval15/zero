@@ -17,10 +17,9 @@ other service as well.
 (setq discover--index-dir "~/Hive/Realm/Discover/.index/")
 (setq discover--files-dir "~/Hive/Realm/Discover/")
 
-(setq discover--types '("Pdf" "Doc" "Book" "Link"))
+(setq discover--types '("Pdf" "Doc" "Book"))
 (setq discover--commands '(("Pdf" . "zathura")
 			   ("Book" . "zathura")
-			   ("Link" . "chromium")
 			   ("Doc" . "libreoffice")))
 
 (setq discover--db (emacsql-sqlite discover--db-location))
@@ -208,7 +207,6 @@ The displayed title is formatted according to `discover-node-display-template'."
 
 #+end_src
 
-
 * Follow Link
 #+begin_src emacs-lisp
 (require 'ol)
@@ -220,5 +218,4 @@ The displayed title is formatted according to `discover-node-display-template'."
   (let ((node (discover--node-from-id id)))
     (discover--open-file (discover--file node) (discover--type node))))
 #+end_src
-
 
