@@ -1,0 +1,13 @@
+#+title: Magic with Git
+* Setup
+#+begin_src emacs-lisp
+(use-package magit)
+#+end_src
+* Keybindings
+#+begin_src emacs-lisp
+(nvmap :states '(normal visual) :keymaps 'override :prefix "SPC m" :which-key "Magit"
+       "s" '(magit-status :which-key "Status")
+       "c" '(magit-commit :which-key "Commit")
+       "p" '(magit-push :which-key "Push")
+       "P" '(magit-pull :which-key "Pull"))
+#+end_src
