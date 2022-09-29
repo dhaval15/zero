@@ -87,13 +87,13 @@
     (switch-to-buffer (find-file-noselect (expand-file-name pheonix-index-file pheonix-publish-dir) nil nil t))
     (erase-buffer)
     (insert "#+TITLE: Pheonix")
+    (zero--insert-line "")
     (cl-loop for group in groups
 	     do (progn
 		  (zero--insert-line (pheonix--group-link (car group)))
 		  (pheonix--build-group (car group) (cdr group))))
     (save-buffer)
     (kill-buffer)))
-
 #+end_src
 * Group
 #+begin_src emacs-lisp
@@ -105,6 +105,7 @@
     (switch-to-buffer (find-file-noselect (pheonix--build-group-file-path group) nil nil t))
     (erase-buffer)
     (insert (format "#+TITLE: %s" group))
+    (zero--insert-line "")
     (cl-loop for headline in headlines
 	     do (progn
 		  (zero--insert-line (format "* %s" (pheonix--build-link-from-headline headline))))
