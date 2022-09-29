@@ -188,9 +188,12 @@ Use :TOC: to create the table.
 #+end_src
 * Captures
 #+begin_src emacs-lisp
+(require 'org-protocol)
 (setq org-capture-templates
    '(("K" "Cliplink capture task" entry (file "bookmarks.org")
-      "* LINK %(org-cliplink-capture) \n" :empty-lines 1)))
+      "* LINK %(org-cliplink-capture) \n" :empty-lines 1)
+     ("Notes" "Today" entry (file+headline "~/Hive/Realm/Neuron/20220921174424-saved_websites.org" "Notes")
+      "* CAPTURE %^{Title}\n%i\n- Ref : %a" :empty-lines-before 1)))
 #+end_src
 
 * Export
