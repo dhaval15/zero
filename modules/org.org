@@ -227,7 +227,3 @@ Use :TOC: to create the table.
 (use-package org-view-mode
   :ensure t)
 #+end_src
-
-#+begin_verse
-Hello
-#+end_verse
