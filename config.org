@@ -151,6 +151,8 @@ Narrowing Framework
 #+begin_src emacs-lisp
 (use-package counsel :ensure t)
 (ivy-mode)
+(with-eval-after-load 'evil
+    (define-key ivy-minibuffer-map [escape] 'minibuffer-keyboard-quit))
 ;;(use-package helm-lsp :ensure t)
 #+end_src
 * TODO MISC
