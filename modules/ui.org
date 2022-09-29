@@ -68,3 +68,16 @@ can also use CTRL plus the mouse wheel for zooming in/out.
 #+begin_src emacs-lisp
 (use-package default-text-scale)
 #+end_src
+
+* Mini Frame
+[[https://github.com/muffinmad/emacs-mini-frame][GitHub - muffinmad/emacs-mini-frame: Show minibuffer in child frame on read-f...]]
+#+begin_src emacs-lisp
+(use-package mini-frame)
+(custom-set-variables
+ '(mini-frame-show-parameters
+   '((top . 0.5)
+     (width . 0.7)
+     (height . 0.5)
+     (alpha . 1.0)
+     (left . 0.5))))
+#+end_src
