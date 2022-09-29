@@ -1,10 +1,10 @@
 #+TITLE: Pheonix
 * Setup
 #+begin_src emacs-lisp
-(setq pheonix-public-dir "~/Dev/OrgFiles/PheonixWeb")
-(setq pheonix-pheonix-file "~/Dev/OrgFiles/Pheonix.org")
+(setq pheonix-public-dir "~/Hive/Realm/PheonixWeb")
+(setq pheonix-pheonix-file "~/Hive/Realm/Pheonix.org")
 (setq pheonix-index-file "index.org")
-(setq pheonix-publish-dir "~/Dev/OrgFiles/Pheonix")
+(setq pheonix-publish-dir "~/Hive/Realm/Pheonix")
 #+end_src
 * Keybindings
 #+begin_src emacs-lisp
