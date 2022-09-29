@@ -39,8 +39,12 @@
    (find-file-noselect 
     (zero--module-path module) nil nil t)))
 #+end_src
-
-
+* File Functions
+#+begin_src emacs-lisp
+(defun delete-current-file()
+  (interactive)
+  (delete-file (buffer-file-name (current-buffer))))
+#+end_src
 * Org Functions
 #+begin_src emacs-lisp
 (defun zero-org--collect-headings (keys filter-key)
