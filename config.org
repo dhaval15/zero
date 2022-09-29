@@ -237,4 +237,6 @@ Utitlity functions loaded at last
 	   '("ui" "dashboard" "files" "buffer" "help" "org" "window")
 	 '("ui" "dashboard" "files" "buffer" "help" "org" "window" "neuron" "focus" "discover" "pheonix"))))
   (zero--modules-init modules))
+(nvmap :states '(normal visual) :keymaps 'override :prefix "SPC z" :which-key "Quick Access"
+       "t" '(toggle-theme :which-key "Toggle Theme"))
 #+end_src

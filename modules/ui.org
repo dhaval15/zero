@@ -9,10 +9,16 @@
       kaolin-themes-distinct-metakeys nil
       kaolin-themes-modeline-border nil)
 (kaolin-treemacs-theme)
-(load-theme 'kaolin-valley-dark t)
-
+(load-theme 'kaolin-valley-light t)
 #+end_src
-
+* Toggle Theme
+#+begin_src emacs-lisp
+(defun toggle-theme ()
+  (interactive)
+  (if (eq (car custom-enabled-themes) 'kaolin-valley-light)
+      (load-theme 'kaolin-valley-dark t)
+    (load-theme 'kaolin-valley-light t)))
+#+end_src
 * Font Face
 #+begin_src emacs-lisp
 ;;(set-face-attribute 'default nil
