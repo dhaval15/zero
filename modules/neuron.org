@@ -58,13 +58,11 @@
 #+begin_src emacs-lisp
 (nvmap :states '(normal visual) :keymaps 'override :prefix "SPC r" :which-key "Neuron"
        "f" '(neuron-find :which-key "Find")
-       "d" '(neuron-find-self :which-key "Documentation")
+       "?" '(neuron-find-self :which-key "Documentation")
        "i" '(org-roam-node-insert :which-key "Insert node")
        "I" '(neuron-node-insert-immediate :which-key "Insert immediately")
-       "p" '(neuron-node-include :which-key "Include node")
        "u" '(neuron-find-undefined :which-key "Find undefined")
        "a" '(neuron-find-archived :which-key "Find Archived")
-       "c" '(neuron-collection :which-key "Collection")
        "e" '(neuron-find-eternal :which-key "Find Eternal")
        "A" '(neuron-node-archive :which-key "Archive")
        "E" '(neuron-node-eternal :which-key "Eternal")
@@ -75,6 +73,8 @@
        "#" '(org-roam-tag-add :which-key "Add tag"))
 
 (nvmap :keymaps 'override :prefix "SPC d"
+  "i" '(neuron-inbox :which-key "Inbox")
+  "d" '(neuron-today :which-key "Today")
   "d" '(neuron-today :which-key "Today")
   "t" '(neuron-tomorrow :which-key "Tomorrow")
   "y" '(neuron-yesterday :which-key "Yesterday")
@@ -177,6 +177,8 @@
   (string= neuron-eternal (neuron-state node)))
 (defun neuron--filter-self (node)
   (string-prefix-p "Neuron" (neuron-type node)))
+(defun neuron--filter-inbox (node)
+  (string-prefix-p "Inbox" (neuron-type node)))
 #+end_src
 * TODO Setup
 Add hooks in module loadig to call neuron-setup
@@ -191,79 +193,86 @@ Add hooks in module loadig to call neuron-setup
 (neuron-setup)
 #+end_src
 * Neuron Find
+:PROPERTIES:
+:NEURON_TYPE: Box
+:END:
 #+begin_src emacs-lisp
-(defun neuron-find-self (type &optional other-window initial-input &key templates)
+(defun neuron-find-self (&optional other-window initial-input &key templates)
   (interactive "P")
   (org-roam-node-find
-      other-window
-      initial-input
-      'neuron--filter-self))
+   other-window
+   initial-input
+   'neuron--filter-self))
 
-(defun neuron-find (type &optional other-window initial-input &key templates)
+(defun neuron-find (&optional other-window initial-input &key templates)
   (interactive "P")
   (org-roam-node-find
-      other-window
-      initial-input
-      (lambda(node)
-	(not (or (neuron--filter-archived node)
-		 (neuron--filter-self node)
-		(neuron--filter-daily node))))))
+   other-window
+   initial-input
+   (lambda(node)
+     (not (or (neuron--filter-archived node)
+	      (neuron--filter-self node)
+	      (neuron--filter-inbox node)
+	      (neuron--filter-daily node))))))
 
-(defun neuron-find-archived (type &optional other-window initial-input &key templates)
+(defun neuron-find-archived (&optional other-window initial-input &key templates)
   (interactive "P")
   (org-roam-node-find
-      other-window
-      initial-input
-      'neuron--filter-archived
-      ))
+   other-window
+   initial-input
+   'neuron--filter-archived))
 
-(defun neuron-find-eternal (type &optional other-window initial-input &key templates)
+(defun neuron-find-eternal (&optional other-window initial-input &key templates)
   (interactive "P")
   (org-roam-node-find
-      other-window
-      initial-input
-      'neuron--filter-eternal
-      ))
+   other-window
+   initial-input
+   'neuron--filter-eternal))
 
 (defun neuron-find-by-genre (genre &optional other-window initial-input)
   (interactive
    (let ((completion-ignore-case  t))
      (list (completing-read "Genre: " neuron-genres nil t))))
-  (org-roam-node-find
-      other-window
-      initial-input
-      (lambda (node)
-	(and (not (neuron-node-archived-p node)) (string= genre (neuron-genre node))))
-      :templates '()
-      ))
+  (let ((org-roam-node-display-template
+	 (concat
+          "${title:*} "
+	  (propertize "${type:16}" 'face 'org-level-6)
+	  (propertize "${tags:28}" 'face 'org-tag))))
+    (org-roam-node-find
+     other-window
+     initial-input
+     (lambda (node)
+       (and (not (neuron-node-archived-p node)) (string= genre (neuron-genre node)))))))
 
 (defun neuron-find-by-type (type &optional other-window initial-input)
   (interactive
    (let ((completion-ignore-case  t))
      (list (completing-read "Type: " neuron-types nil t))))
-  (org-roam-node-find
-      other-window
-      initial-input
-      (lambda (node)
-	(and (not (neuron-node-archived-p node)) (string= type (neuron-type node))))
-      :templates
-        '(("d" "default" plain "%?"
-           :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" ":PROPERTIES:
-:NEURON_TYPE: %(eval type)
-:END:
-,#+title: ${title}")
-           :unnarrowed t))
-      ))
+  (let ((org-roam-node-display-template
+	 (concat
+          "${title:*} "
+	  (propertize "${genre:16}" 'face 'org-level-8)
+	  (propertize "${tags:28}" 'face 'org-tag))))
+    (org-roam-node-find
+     other-window
+     initial-input
+     (lambda (node)
+       (and (not (neuron-node-archived-p node)) (string= type (neuron-type node)))))))
 
 (defun neuron-find-undefined (&optional other-window initial-input)
   (interactive "P")
   (org-roam-node-find
-      other-window
-      initial-input
-      (lambda (node)
-	(if (neuron-type node) nil t))
-      :templates '()
-      ))
+   other-window
+   initial-input
+   (lambda (node)
+     (if (neuron-type node) nil t))))
+
+(defun neuron-find-inbox (&optional other-window initial-input)
+  (interactive "P")
+  (neuron-find-by-type
+   "Inbox"
+   other-window
+   initial-input))
 #+end_src
 * Neuron Daily
 #+begin_src emacs-lisp
@@ -313,3 +322,4 @@ Add hooks in module loadig to call neuron-setup
   (let ((org-agenda-files (neuron--agenda-files)))
 	 (org-todo-list)))
 #+end_src
+
