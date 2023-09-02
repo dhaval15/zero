@@ -12,7 +12,8 @@
       (setq org-roam-v2-ack t)
       (org-roam-db-location zero/neuron-db)
       :config
-      (org-roam-setup)
+      (org-roam-db-autosync-mode)
+      ;;(org-roam-setup)
       (require 'org-roam-protocol))
 #+end_src
 ** Evil Agenda
@@ -44,13 +45,13 @@
 #+begin_src emacs-lisp
 (defun org-roam-node-type (node)
   (let ((type (neuron-type node))) (if type (concat "<" type ">") "")))
-(defun org-roam-node-genre (node)
-  (let ((genre (neuron-genre node))) (if genre (concat ":" genre ":") "")))
+(defun org-roam-node-space (node)
+  (let ((space (neuron-space node))) (if space (concat ":" space ":") "")))
 (setq org-roam-node-display-template
       (concat
           "${title:*} "
 	      (propertize "${type:16}" 'face 'org-level-6)
-	      (propertize "${genre:16}" 'face 'org-level-8)
+	      (propertize "${space:16}" 'face 'org-level-8)
 	      (propertize "${tags:28}" 'face 'org-tag)))
 #+end_src
 
@@ -62,14 +63,15 @@
        "i" '(org-roam-node-insert :which-key "Insert node")
        "I" '(neuron-node-insert-immediate :which-key "Insert immediately")
        "u" '(neuron-find-undefined :which-key "Find undefined")
+       "U" '(neuron-find-unspaced :which-key "Find unspaced")
        "a" '(neuron-find-archived :which-key "Find Archived")
        "e" '(neuron-find-eternal :which-key "Find Eternal")
        "A" '(neuron-node-archive :which-key "Archive")
        "E" '(neuron-node-eternal :which-key "Eternal")
        "t" '(neuron-find-by-type :which-key "Find by type")
-       "g" '(neuron-find-by-genre :which-key "Find by genre")
-       "T" '(neuron-set-type :which-key "Set Type")
-       "G" '(neuron-set-genre :which-key "Set Genre")
+       "s" '(neuron-find-by-space :which-key "Find by space")
+       "T" '(neuron-set-type :which-key "Set type")
+       "S" '(neuron-set-space :which-key "Set space")
        "#" '(org-roam-tag-add :which-key "Add tag"))
 
 (nvmap :keymaps 'override :prefix "SPC d"
@@ -96,7 +98,7 @@
 * Default Variables
 #+begin_src emacs-lisp
 (setq neuron-type "Neuron-Type"
-      neuron-genre "Neuron-Genre"
+      neuron-space "Neuron-Space"
       neuron-documentation "Neuron-Documentation"
       neuron-publish "Neuron-Publish"
       neuron-daily "Daily"
@@ -110,7 +112,7 @@
 (defun neuron-property (node key)
   (cdr (assoc key (org-roam-node-properties node))))
 (defun neuron-type (node) (neuron-property node "NEURON_TYPE"))
-(defun neuron-genre (node) (neuron-property node "NEURON_GENRE"))
+(defun neuron-space (node) (neuron-property node "NEURON_SPACE"))
 (defun neuron-state (node) (neuron-property node "NEURON_STATE"))
 (defun neuron--agenda (node) (neuron-property node "NEURON_AGENDA"))
 
@@ -124,11 +126,11 @@
   (interactive)
   (org-set-property "NEURON_AGENDA" "t"))
 
-(defun neuron-set-genre (genre)
+(defun neuron-set-space (space)
   (interactive 
     (let ((completion-ignore-case  t))
-     (list (completing-read "Genre: " neuron-genres nil t))))
-  (org-set-property "NEURON_GENRE" genre))
+     (list (completing-read "Space: " neuron-spaces nil t))))
+  (org-set-property "NEURON_SPACE" space))
 
 (defun neuron-node-eternal ()
   (interactive)
@@ -159,16 +161,16 @@
    (-filter
     (lambda (node) (neuron--filter-type type node))
      (org-roam-node-list))))
-(defun neuron--node-title-list-with-genre (genre)
+(defun neuron--node-title-list-with-space (space)
   (-map
    'org-roam-node-title
    (-filter
-    (lambda (node) (neuron--filter-genre genre node))
+    (lambda (node) (neuron--filter-space space node))
     (org-roam-node-list))))
 (defun neuron--filter-type (type node)
   (string= type (neuron-type node)))
-(defun neuron--filter-genre (genre node)
-  (string= genre (neuron-genre node)))
+(defun neuron--filter-space (space node)
+  (string= space (neuron-space node)))
 (defun neuron--filter-daily (node)
   (string= neuron-daily (neuron-type node)))
 (defun neuron--filter-archived (node)
@@ -180,7 +182,7 @@
 (defun neuron--filter-inbox (node)
   (string-prefix-p "Inbox" (neuron-type node)))
 #+end_src
-* TODO Setup
+* Setup
 Add hooks in module loadig to call neuron-setup
 #+begin_src emacs-lisp
 (defun neuron-documentation()
@@ -189,8 +191,7 @@ Add hooks in module loadig to call neuron-setup
 (defun neuron-setup()
   (interactive)
   (setq neuron-types (neuron--node-title-list-with-type neuron-type)
-	neuron-genres (neuron--node-title-list-with-type neuron-genre)))
-(neuron-setup)
+   neuron-spaces (neuron--node-title-list-with-type neuron-space)))
 #+end_src
 * Neuron Find
 :PROPERTIES:
@@ -229,10 +230,10 @@ Add hooks in module loadig to call neuron-setup
    initial-input
    'neuron--filter-eternal))
 
-(defun neuron-find-by-genre (genre &optional other-window initial-input)
+(defun neuron-find-by-space (space &optional other-window initial-input)
   (interactive
    (let ((completion-ignore-case  t))
-     (list (completing-read "Genre: " neuron-genres nil t))))
+     (list (completing-read "Space: " neuron-spaces nil t))))
   (let ((org-roam-node-display-template
 	 (concat
           "${title:*} "
@@ -242,7 +243,7 @@ Add hooks in module loadig to call neuron-setup
      other-window
      initial-input
      (lambda (node)
-       (and (not (neuron-node-archived-p node)) (string= genre (neuron-genre node)))))))
+       (and (not (neuron-node-archived-p node)) (string= space (neuron-space node)))))))
 
 (defun neuron-find-by-type (type &optional other-window initial-input)
   (interactive
@@ -266,6 +267,15 @@ Add hooks in module loadig to call neuron-setup
    initial-input
    (lambda (node)
      (if (neuron-type node) nil t))))
+
+(defun neuron-find-unspaced (&optional other-window initial-input)
+  (interactive "P")
+  (org-roam-node-find
+   other-window
+   initial-input
+   (lambda (node)
+     (and (not (neuron--filter-self node))
+	  (if (neuron-space node) nil t)))))
 
 (defun neuron-find-inbox (&optional other-window initial-input)
   (interactive "P")
@@ -298,12 +308,13 @@ Add hooks in module loadig to call neuron-setup
    initial-input
    (lambda (node)
 	(and (not (neuron-node-archived-p node)) (string= neuron-daily (neuron-type node))))
+   nil
    :templates
         '(("d" "default" plain "%?"
            :if-new (file+head "Journal/%<%Y-%m-%d>.org" ":PROPERTIES:
 :NEURON_TYPE: Daily
 :END:
-,#+title: ${title}")
+#+title: ${title}")
 	   ))))
 #+end_src
 
@@ -322,4 +333,56 @@ Add hooks in module loadig to call neuron-setup
   (let ((org-agenda-files (neuron--agenda-files)))
 	 (org-todo-list)))
 #+end_src
+* Neuron Space Switching
+#+begin_src emacs-lisp
+(setq neuron-default-space "Fiction")
 
+(defun neuron-space-switch (space)
+  (interactive
+   (let ((completion-ignore-case  t))
+     (list (completing-read "Space: " neuron-spaces nil t))))
+  (setq neuron-default-space space))
+
+(defun neuron-space-set ()
+  (interactive)
+  (org-set-property "NEURON_SPACE" neuron-default-space))
+
+(defun neuron-space-find (&optional other-window initial-input)
+  (interactive "P")
+  (neuron-find-by-space neuron-default-space other-window initial-input))
+
+(defun neuron-extract-headline ()
+  "Create an Org-roam note from the current headline and jump to it.
+
+Normally, insert the headline’s title using the ’#title:’ file-level property
+and delete the Org-mode headline. However, if the current headline has a
+Org-mode properties drawer already, keep the headline and don’t insert
+‘#+title:'. Org-roam can extract the title from both kinds of notes, but using
+‘#+title:’ is a bit cleaner for a short note, which Org-roam encourages."
+  (interactive)
+  (let ((title (nth 4 (org-heading-components)))
+        (has-properties (org-get-property-block)))
+    (org-cut-subtree)
+    (org-roam-node-find 'other-window title nil)
+    (org-paste-subtree)
+    (unless has-properties
+      (kill-line)
+      (while (outline-next-heading)
+        (org-promote)))
+    (goto-char (point-min))
+    (when has-properties
+      (kill-line)
+      (kill-line))))
+
+(nvmap :states '(normal visual) :keymaps 'override :prefix "SPC n" :which-key "Space"
+    "f" '(neuron-space-find :which-key "Find")
+    "S" '(neuron-space-set :which-key "Set")
+    "e" '(neuron-extract-headline :which-key "Extract")
+    "s" '(neuron-space-switch :which-key "Switch")
+    "i" '(org-roam-node-insert :which-key "Insert node")
+    "I" '(neuron-node-insert-immediate :which-key "Insert immediately"))
+#+end_src
+* Init
+#+begin_src emacs-lisp
+(neuron-setup)
+#+end_src

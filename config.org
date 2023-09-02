@@ -1,6 +1,15 @@
 #+TITLE: Emacs Zero
 #+AUTHOR: Dhaval Patel
 
+* Mini frame
+#+begin_src emacs-lisp
+;; (setq initial-frame-alist
+;;       '((left . 1) (minibuffer . nil)
+;;         ;; You'll need to adjust the following 3 numbers.
+;;         (top . 75) ; In pixels
+;;         (width . 127) ; In chars
+;;         (height . 31)))
+#+end_src
 * DEFINED VARIABLES
 ** Files and Directory
 #+begin_src emacs-lisp
@@ -11,7 +20,7 @@
       zero/org-dir "~/Hive/Realm"
       zero/org-agenda-dir "~/Hive/Realm/"
       zero/org-journal-dir "~/Hive/Realm/DigitalGarden/Journal"
-      zero/zero-logo "~/Hive/dots/zero/zero.png"
+      zero/zero-logo "~/.emacs.d/zero.png"
       zero/org-html-css "<link rel=\"stylesheet\" type=\"text/css\" href=\"/home/dhaval/Hive/Realm/public/css/simple.min.css\" />"
       zero/org-publish-dir "~/Hive/Realm/Publish"
       zero/html-publish-dir "~/Hive/Realm/public"
@@ -240,3 +249,4 @@ Utitlity functions loaded at last
 (nvmap :states '(normal visual) :keymaps 'override :prefix "SPC z" :which-key "Quick Access"
        "t" '(toggle-theme :which-key "Toggle Theme"))
 #+end_src
+

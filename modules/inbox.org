@@ -1,0 +1,4 @@
+#+TITLE: Inbox
+
+#+begin_src emacs-lisp
+#+end_src

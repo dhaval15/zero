@@ -86,7 +86,7 @@
   (save-window-excursion
     (switch-to-buffer (find-file-noselect (expand-file-name pheonix-index-file pheonix-publish-dir) nil nil t))
     (erase-buffer)
-    (insert "#+TITLE: Pheonix")
+    (insert "#+TITLE: Frosted Ink")
     (zero--insert-line "")
     (cl-loop for group in groups
 	     do (progn

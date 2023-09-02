@@ -1,0 +1,11 @@
+#+title: External
+
+* Functions
+#+begin_src emacs-lisp
+(defun external-choose-file (path extensions excludes)
+  (string-trim
+   (shell-command-to-string
+    (format "fd --search-path %s %s %s | choose" path
+	  (mapconcat (lambda (e) (format "-e %s" e)) extensions " ")
+	  (mapconcat (lambda (e) (format "-E \"%s\"" e)) excludes " ")))))
+#+end_src

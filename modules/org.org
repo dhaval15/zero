@@ -68,8 +68,8 @@ some tweaking.
       org-default-notes-file (expand-file-name "notes.org" org-directory)
       org-ellipsis " ... "
       org-log-done 'time
-      org-refile-targets '(("/home/dhaval/Dev/Write/archives/daily.org" :maxlevel . 1)
-                           ("/home/dhaval/Dev/Write/archives/tasks.org" :maxlevel . 1))
+      org-refile-targets '(("/home/dhaval/Hive/Realm/archives/daily.org" :maxlevel . 1)
+                           ("/home/dhaval/Hive/Realm/archives/tasks.org" :maxlevel . 1))
       org-journal-dir zero/org-journal-dir
       org-journal-date-format "%B %d, %Y (%A) "
       org-journal-file-format "%Y-%m-%d.org"
@@ -226,4 +226,36 @@ Use :TOC: to create the table.
 #+begin_src emacs-lisp
 (use-package org-view-mode
   :ensure t)
+#+end_src
+
+* Review Links
+#+begin_src emacs-lisp
+(org-link-set-parameters "review"
+			 :follow #'org-review-open
+			 :store #'org-review-store-link
+			 :face 'org-link-review)
+
+(defcustom org-man-command 'man
+  "The Emacs command to be used to display a man page."
+  :group 'org-link
+  :type '(choice (const man) (const woman)))
+
+(defun org-review-open (path _)
+  "Visit the manpage on PATH.
+PATH should be a topic that can be thrown at the man command."
+  (funcall org-man-command path))
+
+(defun org-review-store-link ()
+  "Store a link to a man page."
+      (org-link-store-props
+       :type "review"
+       :link "test"
+       :description "TODO"))
+
+(defface org-link-review
+  '((t :foreground "#00CCFF"
+       ;;:background "#003355"
+       :underline nil))
+  "Face for Org-Mode links starting with id:."
+      :group 'org-faces)
 #+end_src

@@ -9,7 +9,7 @@
       kaolin-themes-distinct-metakeys nil
       kaolin-themes-modeline-border nil)
 (kaolin-treemacs-theme)
-(load-theme 'kaolin-valley-light t)
+(load-theme 'kaolin-valley-dark t)
 #+end_src
 * Toggle Theme
 #+begin_src emacs-lisp
@@ -72,12 +72,28 @@ can also use CTRL plus the mouse wheel for zooming in/out.
 * Mini Frame
 [[https://github.com/muffinmad/emacs-mini-frame][GitHub - muffinmad/emacs-mini-frame: Show minibuffer in child frame on read-f...]]
 #+begin_src emacs-lisp
-(use-package mini-frame)
-(custom-set-variables
- '(mini-frame-show-parameters
-   '((top . 0.5)
-     (width . 0.7)
-     (height . 0.5)
-     (alpha . 1.0)
-     (left . 0.5))))
+;; (use-package mini-frame)
+;; (custom-set-variables
+;;  '(mini-frame-show-parameters
+;;    '((top . 0.5)
+;;      (width . 0.7)
+;;      (height . 0.5)
+;;      (alpha . 1.0)
+;;      (left . 0.5))))
+
+
+;; (setq minibuffer-frame-alist
+;;       '((title . "_minibuffer_")
+;;         (font . "Ubuntu Mono-15")
+;;         (line-spacing . 0.2)
+;;         (internal-border-width . 12)
+;;         (height . 1)
+;;         (top . 18)
+;;         (left . 194)
+;;         (width . (text-pixels . 2130))))
+#+end_src
+
+* Extras
+#+begin_src emacs-lisp
+(global-display-line-numbers-mode 0)
 #+end_src
